@@ -891,15 +891,15 @@ int main(void)
 				break;
 			}
 			k_sem_reset(&sem_subevent_results_parsed);
-			k_sem_reset(&sem_procedure_disabled);
 
+			/* One bounded procedure (count=1); the controller auto-disables after it.
+			 * Do NOT wait on a disable event here — that extra latency turned the
+			 * per-turn re-enable into "Command Disallowed" (0x0c) and killed ranging.
+			 * An occasional re-enable error just costs one turn (reflector advances). */
 			if (bt_le_cs_procedure_enable(connection, &enable_params) == 0) {
 				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(300)) == 0) {
 					distance_estimates_update();
 				}
-				/* Let the count=1 burst fully disable before the next enable
-				 * (avoids the -EACCES re-enable race). */
-				(void)k_sem_take(&sem_procedure_disabled, K_MSEC(150));
 			}
 
 			if (turn_value_handle) {
