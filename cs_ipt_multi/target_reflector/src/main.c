@@ -243,8 +243,9 @@ static void round_robin_thread(void *p1, void *p2, void *p3)
 
 		if (bt_gatt_notify(c, &turn_svc.attrs[2], &go, sizeof(go)) == 0) {
 			/* Wait for the anchor's CS burst to finish, or time out and advance so
-			 * one slow/lost anchor can't wedge the rotation. */
-			(void)k_sem_take(&sem_turn_done, K_MSEC(400));
+			 * one slow/lost anchor can't wedge the rotation. Covers the anchor's
+			 * ~200-300 ms procedure + compute + the "done" write, with margin. */
+			(void)k_sem_take(&sem_turn_done, K_MSEC(900));
 		}
 
 		active_turn_conn = NULL;

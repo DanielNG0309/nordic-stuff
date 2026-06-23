@@ -369,16 +369,20 @@ static void subevent_result_cb(struct bt_conn *conn, struct bt_conn_le_cs_subeve
 				 BT_HCI_LE_CS_SUBEVENT_ABORT_REASON_NO_ABORT);
 
 	if (cs_aborted) {
-		LOG_DBG("CS aborted. "
-			"Procedure counter: %u, procedure abort reason: %u, subevent abort reason: "
-			"%u",
+		LOG_DBG("CS aborted. pc=%u proc_abort=%u subevent_abort=%u",
 			result->header.procedure_counter, result->header.procedure_abort_reason,
 			result->header.subevent_abort_reason);
 		return;
 	}
 
 	if (result->header.procedure_counter != prev_procedure_counter) {
-		k_sem_take(&sem_distance_estimate_updated, K_FOREVER);
+		/* NEVER block the BT RX thread here. The stock sample uses K_FOREVER because
+		 * distance_estimates_update() (which gives this sem) runs every procedure. In
+		 * our round-robin the ranging loop has a timeout and may skip that update, so a
+		 * K_FOREVER take would deadlock the RX thread -> CS stalls -> "Command Disallowed"
+		 * on every subsequent enable. Best-effort take is safe: we serialize ranging, so
+		 * the buffer isn't being read when a new procedure starts. */
+		(void)k_sem_take(&sem_distance_estimate_updated, K_NO_WAIT);
 		memset(iq.scratch_mem, 0, sizeof(iq.scratch_mem));
 	}
 	prev_procedure_counter = result->header.procedure_counter;
@@ -718,12 +722,12 @@ int main(void)
 		return 0;
 	}
 
-	/* De-correlated connection interval, ~50-60 ms, chosen per-anchor from this
-	 * device's own identity address. Three INDEPENDENT central anchors with the SAME
-	 * interval lock into persistent CS-subevent collisions at the reflector and starve
-	 * one another; giving each a slightly different interval makes their anchor points
-	 * drift through each other so every anchor gets CS slots over time. (The stock
-	 * 7.5 ms interval also made one anchor consume ~50% of the radio.) */
+	/* The round-robin serializes CS (one anchor ranges at a time), so the per-anchor
+	 * interval de-correlation we needed for free-running contention is no longer
+	 * required. Use a SHORT fixed interval: the ~58-step procedure is delivered over
+	 * many connection events, so a short interval makes each procedure COMPLETE much
+	 * faster (same tone count), which is what limits the round-robin rate.
+	 * (hash is still used below to stagger scan start across anchors at boot.) */
 	bt_addr_le_t ids[CONFIG_BT_ID_MAX];
 	size_t id_count = ARRAY_SIZE(ids);
 	uint8_t hash = 0;
@@ -735,8 +739,8 @@ int main(void)
 		}
 	}
 
-	/* 40..48 units * 1.25 ms = 50.0 .. 60.0 ms */
-	uint16_t conn_interval_units = 40 + (hash % 9);
+	/* 16 units * 1.25 ms = 20 ms (subevent_len 8 ms fits; > overhead). */
+	uint16_t conn_interval_units = 16;
 
 	LOG_INF("Anchor connection interval: %u units (%u.%02u ms)", conn_interval_units,
 		(conn_interval_units * 125) / 100, (conn_interval_units * 125) % 100);
@@ -897,7 +901,11 @@ int main(void)
 			 * per-turn re-enable into "Command Disallowed" (0x0c) and killed ranging.
 			 * An occasional re-enable error just costs one turn (reflector advances). */
 			if (bt_le_cs_procedure_enable(connection, &enable_params) == 0) {
-				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(300)) == 0) {
+				/* Wait for the procedure to COMPLETE. At the 20 ms interval it finishes
+				 * in ~200-300 ms; 700 ms covers it with margin. (Must exceed the
+				 * procedure time or the COMPLETE is missed -> 0 DIST; but keep it tight so
+				 * an aborted turn doesn't stall the rotation.) */
+				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(700)) == 0) {
 					distance_estimates_update();
 				}
 			}
