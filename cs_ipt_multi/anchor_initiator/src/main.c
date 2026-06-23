@@ -739,8 +739,11 @@ int main(void)
 		}
 	}
 
-	/* 16 units * 1.25 ms = 20 ms (subevent_len 8 ms fits; > overhead). */
-	uint16_t conn_interval_units = 16;
+	/* 40 units * 1.25 ms = 50 ms. Longer interval -> idle anchors' ACL events are
+	 * sparser, so they collide less with the ACTIVE anchor's CS subevent at the reflector
+	 * -> fewer subevent_abort=2 (no CS_SYNC), which is what starves the weaker-RSSI
+	 * anchors. Trades a slower procedure for fairer/more-reliable multi-anchor ranging. */
+	uint16_t conn_interval_units = 40;
 
 	LOG_INF("Anchor connection interval: %u units (%u.%02u ms)", conn_interval_units,
 		(conn_interval_units * 125) / 100, (conn_interval_units * 125) % 100);
@@ -782,6 +785,22 @@ int main(void)
 
 	cs_config_get(&config_params);
 	bt_le_cs_set_valid_chmap_bits(config_params.channel_map);
+
+	/* Keep every other valid channel, halving the channel count. Each CS procedure then
+	 * has ~half the steps, so it COMPLETES faster (higher round-robin rate) and is exposed
+	 * to multi-connection radio collisions for less time (fewer subevent_abort=2). ~36
+	 * tones remain (>15 needed for IFFT); the 2 MHz comb still gives ~75 m IFFT unambiguous
+	 * range — fine for the <=30 m use case. */
+	bool keep_ch = true;
+
+	for (int ch = 0; ch < 80; ch++) {
+		if (config_params.channel_map[ch / 8] & BIT(ch % 8)) {
+			if (!keep_ch) {
+				config_params.channel_map[ch / 8] &= ~BIT(ch % 8);
+			}
+			keep_ch = !keep_ch;
+		}
+	}
 
 	/* scale factor of conn_interval units to proc_interval units is 1.25/0.625 = 2.
 	 * Fairness is handled by the reflector round-robin (one anchor ranges per turn),
@@ -901,11 +920,10 @@ int main(void)
 			 * per-turn re-enable into "Command Disallowed" (0x0c) and killed ranging.
 			 * An occasional re-enable error just costs one turn (reflector advances). */
 			if (bt_le_cs_procedure_enable(connection, &enable_params) == 0) {
-				/* Wait for the procedure to COMPLETE. At the 20 ms interval it finishes
-				 * in ~200-300 ms; 700 ms covers it with margin. (Must exceed the
-				 * procedure time or the COMPLETE is missed -> 0 DIST; but keep it tight so
-				 * an aborted turn doesn't stall the rotation.) */
-				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(700)) == 0) {
+				/* Wait for the procedure to COMPLETE. Halved-channel procedure at the 50 ms
+				 * interval finishes in ~300-400 ms; 600 ms covers it. (Aborted procedures
+				 * never send COMPLETE, so this is the per-abort cost.) */
+				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(600)) == 0) {
 					distance_estimates_update();
 				}
 			}
