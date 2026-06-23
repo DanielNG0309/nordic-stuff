@@ -3,7 +3,7 @@
 Multi-anchor Bluetooth LE **Channel Sounding** ranging on nRF54L15, using Nordic's
 **CS IPT** (Inline PCT Transfer) so each anchor computes an **IFFT** distance estimate from its
 own subevent data — no Ranging Service (RAS) GATT transfer. Built for an indoor moving-target
-("panic button") use case: several fixed anchors locate one moving target.
+use case: several fixed anchors locate one moving target.
 
 ## Topology
 
