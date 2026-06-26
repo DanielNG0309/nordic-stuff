@@ -31,7 +31,7 @@ starve each other):
 2. That initiator runs one CS procedure, computes its distance, and **writes `0`** ("done") back.
 3. The reflector advances `turn_idx` to the next initiator and repeats.
 
-Each initiator prints a tool-compatible line (parsed by the `Multilateration/` tool):
+Each initiator prints a parser-friendly distance line over its serial console:
 
 ```
 DIST:<m>,AP:0,SAMPLES:<steps>,RSSI:<dBm>,RSSI_DIST:<m>
