@@ -722,12 +722,16 @@ int main(void)
 		return 0;
 	}
 
-	/* The round-robin serializes CS (one anchor ranges at a time), so the per-anchor
-	 * interval de-correlation we needed for free-running contention is no longer
-	 * required. Use a SHORT fixed interval: the ~58-step procedure is delivered over
-	 * many connection events, so a short interval makes each procedure COMPLETE much
-	 * faster (same tone count), which is what limits the round-robin rate.
-	 * (hash is still used below to stagger scan start across anchors at boot.) */
+	/* Per-anchor connection-interval DE-CORRELATION. The round-robin serializes the CS
+	 * *procedures* (one anchor ranges per turn), but every anchor's idle ACL connection
+	 * events keep firing on its own interval regardless of whose turn it is. If two anchors
+	 * share the SAME interval and their anchor points align, those idle events collide with
+	 * the ACTIVE anchor's CS subevent at the reflector on EVERY interval -> a PERSISTENT
+	 * subevent_abort=2 (no CS_SYNC) that starves one anchor indefinitely. A churn/reset is
+	 * what triggers it: the reconnecting anchor's new phase can land aligned with an
+	 * existing anchor and never drift out. Giving each anchor a slightly different interval
+	 * makes any such collision drift through and self-heal in ~1-2 s. The offset is
+	 * address-derived, so a device is stable across reboots. */
 	bt_addr_le_t ids[CONFIG_BT_ID_MAX];
 	size_t id_count = ARRAY_SIZE(ids);
 	uint8_t hash = 0;
@@ -739,11 +743,11 @@ int main(void)
 		}
 	}
 
-	/* 40 units * 1.25 ms = 50 ms. Longer interval -> idle anchors' ACL events are
-	 * sparser, so they collide less with the ACTIVE anchor's CS subevent at the reflector
-	 * -> fewer subevent_abort=2 (no CS_SYNC), which is what starves the weaker-RSSI
-	 * anchors. Trades a slower procedure for fairer/more-reliable multi-anchor ranging. */
-	uint16_t conn_interval_units = 40;
+	/* 40..51 units = 50.0..63.75 ms. Base 50 ms keeps idle ACL events sparse (few
+	 * collisions to begin with); the per-anchor spread keeps any collision transient. The
+	 * result-wait / reflector-turn timeouts below are sized to cover the longest interval's
+	 * procedure (success exits early, so the wider budget only bounds aborted turns). */
+	uint16_t conn_interval_units = 40 + (hash % 12);
 
 	LOG_INF("Anchor connection interval: %u units (%u.%02u ms)", conn_interval_units,
 		(conn_interval_units * 125) / 100, (conn_interval_units * 125) % 100);
@@ -920,10 +924,12 @@ int main(void)
 			 * per-turn re-enable into "Command Disallowed" (0x0c) and killed ranging.
 			 * An occasional re-enable error just costs one turn (reflector advances). */
 			if (bt_le_cs_procedure_enable(connection, &enable_params) == 0) {
-				/* Wait for the procedure to COMPLETE. Halved-channel procedure at the 50 ms
-				 * interval finishes in ~300-400 ms; 600 ms covers it. (Aborted procedures
-				 * never send COMPLETE, so this is the per-abort cost.) */
-				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(600)) == 0) {
+				/* Wait for the procedure to COMPLETE. Sized to cover the LONGEST
+				 * de-correlated interval (~63.75 ms) procedure, not just 50 ms. A
+				 * successful procedure releases this sem early (COMPLETE event), so the
+				 * wider budget costs nothing on the success path; it only bounds aborted
+				 * turns (which never send COMPLETE). */
+				if (k_sem_take(&sem_subevent_results_parsed, K_MSEC(950)) == 0) {
 					distance_estimates_update();
 				}
 			}

@@ -186,6 +186,27 @@ static void reflector_worker(void *p1, void *p2, void *p3)
 
 		/* Configure CS reflector role for every newly connected anchor. */
 		while (k_msgq_get(&new_conn_q, &c, K_NO_WAIT) == 0) {
+			/* If this anchor reset and reconnected before its previous link
+			 * supervision-timed-out (~4 s), the stale duplicate is still in anchors[]
+			 * and its dead connection events disrupt the live anchors' CS for those
+			 * seconds (the round-robin even wastes whole turns notifying it). The
+			 * reconnecting anchor reuses its identity address, so drop any other slot
+			 * holding the same peer address now. */
+			const bt_addr_le_t *naddr = bt_conn_get_dst(c);
+			int cidx = bt_conn_index(c);
+
+			k_mutex_lock(&anchors_lock, K_FOREVER);
+			for (int j = 0; j < CONFIG_BT_MAX_CONN; j++) {
+				if (anchors[j] && j != cidx &&
+				    bt_addr_le_eq(bt_conn_get_dst(anchors[j]), naddr)) {
+					LOG_INF("Dropping stale duplicate of reconnected anchor (slot %d)",
+						j);
+					bt_conn_disconnect(anchors[j],
+							   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+				}
+			}
+			k_mutex_unlock(&anchors_lock);
+
 			int err = bt_le_cs_set_default_settings(c, &default_settings);
 
 			if (err) {
@@ -243,9 +264,11 @@ static void round_robin_thread(void *p1, void *p2, void *p3)
 
 		if (bt_gatt_notify(c, &turn_svc.attrs[2], &go, sizeof(go)) == 0) {
 			/* Wait for the anchor's CS burst to finish, or time out and advance so
-			 * one slow/lost anchor can't wedge the rotation. Covers the anchor's
-			 * procedure + its (≤600 ms) result-wait + compute + "done" write. */
-			(void)k_sem_take(&sem_turn_done, K_MSEC(800));
+			 * one slow/lost anchor can't wedge the rotation. Must exceed the anchor's
+			 * (≤950 ms) result-wait + compute + "done" write at the longest
+			 * de-correlated interval. A successful turn releases this early, so the
+			 * wider ceiling only bounds aborted turns. */
+			(void)k_sem_take(&sem_turn_done, K_MSEC(1150));
 		}
 
 		active_turn_conn = NULL;
