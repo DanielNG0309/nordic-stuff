@@ -8,7 +8,7 @@ own IFFT distance locally from its subevent data (no RAS/GATT transfer), and pri
 
    ``DIST:<metres>,AP:0,SAMPLES:<high-quality-tone-count>``
 
-Note this is the **opposite** BLE-role arrangement to the stock ``ipt_initiator`` sample (where the
+Note this is the **opposite** BLE-role arrangement to the stock sample (where the
 initiator is the central that scans): here the initiator advertises and is connected to.
 
 Distance processing:
