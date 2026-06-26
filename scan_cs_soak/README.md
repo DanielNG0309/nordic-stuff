@@ -85,6 +85,4 @@ per-window scan rate, and the thread analyzer.
 - Occasional single-cycle `CS FAILED` self-recovers; the loop never stalls.
 
 **Takeaway:** keep scanning and do CS underneath it (continuous) for uninterrupted
-coverage, or use the mode switch if you need CS to have the radio to itself — either
-way, no reboot is required. Where the same peer is ranged repeatedly, keeping the
-connection open and re-running procedures (no disconnect) is safer still.
+coverage, or use the mode switch if you need CS to have the radio to itself
