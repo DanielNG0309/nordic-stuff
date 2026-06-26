@@ -15,7 +15,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/cs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -152,57 +151,6 @@ static float get_filtered_distance(void)
 	return median_inplace(num_ifft, temp_ifft);
 }
 
-/* Read the connection RSSI for the DIST: output line (best effort). */
-static int8_t read_conn_rssi(struct bt_conn *c)
-{
-	struct net_buf *buf, *rsp = NULL;
-	struct bt_hci_cp_read_rssi *cp;
-	struct bt_hci_rp_read_rssi *rp;
-	uint16_t handle;
-	int8_t rssi = 0;
-
-	if (!c || bt_hci_get_conn_handle(c, &handle)) {
-		return 0;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_RSSI, sizeof(*cp));
-	if (!buf) {
-		return 0;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = sys_cpu_to_le16(handle);
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_RSSI, buf, &rsp)) {
-		return 0;
-	}
-
-	rp = (void *)rsp->data;
-	rssi = rp->rssi;
-	net_buf_unref(rsp);
-
-	return rssi;
-}
-
-/* Path-loss RSSI->distance fallback, carried in the DIST: line for the
- * multilateration tool to weight against. */
-static float rssi_to_distance(int8_t rssi)
-{
-	const float reference_rssi = -60.0f; /* RSSI at 1 m */
-	const float n = 2.2f;                /* indoor short-range path-loss exponent */
-	float d;
-
-	if (rssi > -30) {
-		rssi = -30;
-	}
-	if (rssi < -90) {
-		rssi = -90;
-	}
-
-	d = powf(10.0f, (reference_rssi - rssi) / (10.0f * n));
-	return CLAMP(d, 0.1f, 10.0f);
-}
-
 static void distance_estimates_update(void)
 {
 	uint8_t samples = 0;
@@ -252,12 +200,9 @@ static void distance_estimates_update(void)
 		LOG_INF("Distance estimates: median: %.2fm, update: %.2fm, time_delta: %lldms",
 			(double)distance_median, (double)distance_ifft, delta);
 
-		/* Compatibility line for the Multilateration Python tool, which parses:
-		 * DIST:%.3f,AP:%d,SAMPLES:%d,RSSI:%d,RSSI_DIST:%.3f  (IFFT median as DIST). */
-		int8_t rssi = read_conn_rssi(connection);
-
-		printk("DIST:%.3f,AP:0,SAMPLES:%d,RSSI:%d,RSSI_DIST:%.3f\n",
-		       (double)distance_median, samples, rssi, (double)rssi_to_distance(rssi));
+		/* Parser line for the Multilateration tool: DIST:<m>,AP:<idx>,SAMPLES:<n>
+		 * (IFFT median as DIST). */
+		printk("DIST:%.3f,AP:0,SAMPLES:%d\n", (double)distance_median, samples);
 	}
 	k_sem_give(&sem_distance_estimate_updated);
 }

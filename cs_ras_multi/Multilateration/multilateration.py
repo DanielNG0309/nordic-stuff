@@ -1493,19 +1493,25 @@ class SerialDataReader:
                 time.sleep(0.1)
 
     def _parse_serial_line(self, line, anchor_name):
-        """Parse the C code output format: DIST:%.3f,AP:%d,SAMPLES:%d,RSSI:%d,RSSI_DIST:%.3f"""
+        """Parse the C output: DIST:%.3f,AP:%d,SAMPLES:%d[,RSSI:%d[,RSSI_DIST:%.3f]]
+
+        RSSI and RSSI_DIST are optional — the ipt_swap variant emits CS-only lines
+        (DIST,AP,SAMPLES). When RSSI is absent, the measurement gets full weight.
+        """
         try:
-            # Use regex to parse the line
-            pattern = r"DIST:([\d.-]+),AP:(\d+),SAMPLES:(\d+),RSSI:([\d.-]+),RSSI_DIST:([\d.-]+)"
+            # Use regex to parse the line; RSSI / RSSI_DIST optional.
+            pattern = (
+                r"DIST:([\d.-]+),AP:(\d+),SAMPLES:(\d+)"
+                r"(?:,RSSI:([\d.-]+))?(?:,RSSI_DIST:([\d.-]+))?"
+            )
             match = re.match(pattern, line)
 
             if match:
                 distance = float(match.group(1))
                 ap_id = int(match.group(2))
                 samples = int(match.group(3))
-                rssi = float(match.group(4))
-                # rssi_dist is not used, so it's commented out.
-                # rssi_dist = float(match.group(5))
+                # Absent RSSI -> 0.0, which normalises to full weight (no penalty).
+                rssi = float(match.group(4)) if match.group(4) is not None else 0.0
 
                 return {
                     "anchor_name": anchor_name,

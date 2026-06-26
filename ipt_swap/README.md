@@ -25,7 +25,7 @@ If the peripheral drives setup you get IPT config status `0x11` / CS security `e
   for each link, and runs the round-robin turn scheduler.
 - `init_peripheral/` — BLE peripheral + CS **initiator**. Advertises as `Nordic CS IPT
   Initiator`, computes IFFT distance from its own subevent data, and emits a parser line:
-  `DIST:%.3f,AP:0,SAMPLES:%d,RSSI:%d,RSSI_DIST:%.3f`.
+  `DIST:<metres>,AP:0,SAMPLES:<high-quality-tone-count>`.
 
 ## Multi-link fairness: round-robin turn token
 
@@ -58,8 +58,30 @@ roughly constant whether 2 or 3 anchors (per-turn overhead dominates, not the an
 is ~10× a RAS or peripheral-reflector-IPT round-robin at 3 anchors. The rate does **not** respond
 to connection-interval / channel-map / burst / steps tuning — the per-turn CS re-establishment is
 a fixed cost (a re-enabled CS procedure runs ~6× slower than continuous single-link CS), so
-~2.3–2.7 Hz/anchor is the practical ceiling. Accuracy carries the inherent `cs_de` IFFT offset
-(~+0.5–0.8 m at ~2 m), same as the stock samples.
+~2.3–2.7 Hz/anchor is the practical ceiling.
+
+## Tone filtering & accuracy
+
+- **Tone Quality Indicator (TQI) filtering:** only `BT_HCI_LE_CS_TONE_QUALITY_HIGH` tones are fed to
+  the IFFT, and a procedure is dropped unless at least `TONE_QI_OK_TONE_COUNT_THRESHOLD` (15) HIGH
+  tones are present (matching the stock `ras_initiator`; the stock `ipt_initiator` does *not* filter).
+  At close, clean line-of-sight every tone is HIGH so the filter is a no-op (`SAMPLES` stays ~32); it
+  only removes tones at longer range / multipath.
+- **Distance bias is real, inherent to `cs_de`, and distance-dependent.** Measured on the nRF54L15
+  (single anchor, median filter), raw reading vs truth:
+
+  | true | raw | bias |
+  | --- | --- | --- |
+  | 0.5 m | ~1.37 m | ~0.87 m |
+  | 1.0 m | ~1.6–1.8 m | ~0.6–0.8 m |
+  | 2.0 m | ~2.41 m | ~0.41 m (confirmed ×3, no multipath) |
+
+  The bias shrinks with range (largest in the near field). It's present in the stock sample too — we
+  did not change the CS config, NFFT, or estimator.
+- **`CONFIG_APP_CS_DISTANCE_OFFSET_MM`** subtracts a fixed offset from each estimate (before the
+  median filter) to compensate. Because the bias is distance-dependent, pick the offset for your
+  operating range: 800 mm is spot-on at ~1 m; 500 mm (the default here) gives ~±0.1 m across 1–2 m;
+  ~450 mm suits ~2 m. Re-measure at known distances to calibrate for a given deployment.
 
 ## Implementation notes / gotchas
 
