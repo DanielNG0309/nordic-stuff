@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(app_main, LOG_LEVEL_INF);
 
 #define CHANNEL_INDEX_OFFSET   (2)
 #define MEDIAN_FILTER_SIZE (9)
+/* Minimum HIGH-quality tones for an estimate to be trusted, matching the official
+ * ras_initiator sample (TONE_QI_OK_TONE_COUNT_THRESHOLD). */
+#define TONE_QI_OK_TONE_COUNT_THRESHOLD (15)
 
 static K_SEM_DEFINE(sem_remote_capabilities_obtained, 0, 1);
 static K_SEM_DEFINE(sem_config_created, 0, 1);
@@ -270,6 +273,15 @@ static void distance_estimates_update(void)
 		}
 	}
 
+	/* Tone-quality gate (matches ras_initiator): require enough HIGH-quality tones
+	 * (pcts_parse only kept HIGH ones) before trusting the IFFT — too few good tones
+	 * gives biased/near-field estimates. Drop the procedure otherwise. */
+	if (samples < TONE_QI_OK_TONE_COUNT_THRESHOLD) {
+		printk("DROP:AP:0,SAMPLES:%d\n", samples);
+		k_sem_give(&sem_distance_estimate_updated);
+		return;
+	}
+
 	float distance_ifft = cs_de_ifft(iq.scratch_mem);
 
 	if (isfinite(distance_ifft)) {
@@ -303,6 +315,13 @@ static void distance_estimates_update(void)
 static void pcts_parse(uint8_t channel_index,
 		       struct bt_hci_le_cs_step_data_tone_info *local_tone_info)
 {
+	/* Only accept HIGH-quality tones, matching the official ras_initiator sample —
+	 * feeding a low-quality tone to the IFFT biases the estimate. Skipped channels stay
+	 * zero (iq is cleared per procedure) and so don't count toward the tone total. */
+	if (local_tone_info[0].quality_indicator != BT_HCI_LE_CS_TONE_QUALITY_HIGH) {
+		return;
+	}
+
 	struct bt_le_cs_iq_sample local_iq =
 		bt_le_cs_parse_pct(local_tone_info[0].phase_correction_term);
 

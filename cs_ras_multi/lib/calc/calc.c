@@ -58,34 +58,23 @@ static float median_inplace(int count, float *values)
 cs_de_dist_estimates_t get_distance(uint8_t ap) {
 	cs_de_dist_estimates_t result = {};
 	uint8_t num_ifft = 0;
-	uint8_t num_phase_slope = 0;
-	uint8_t num_rtt = 0;
 
 	float temp_ifft[DE_SLIDING_WINDOW_SIZE];
-	float temp_phase_slope[DE_SLIDING_WINDOW_SIZE];
-	float temp_rtt[DE_SLIDING_WINDOW_SIZE];
 
 	int lock_state = k_mutex_lock(&distance_estimate_buffer_mutex, K_FOREVER);
 
 	__ASSERT_NO_MSG(lock_state == 0);
 
+	/* IFFT-only: median the recent IFFT estimates (RTT / phase-slope are not used). */
 	for (uint8_t i = 0; i < buffer_num_valid; i++) {
 		if (isfinite(distance_estimate_buffer[ap][i].ifft)) { // isfinite i.e is a real number check
 			temp_ifft[num_ifft++] = distance_estimate_buffer[ap][i].ifft;
-		}
-		if (isfinite(distance_estimate_buffer[ap][i].phase_slope)) {
-			temp_phase_slope[num_phase_slope++] = distance_estimate_buffer[ap][i].phase_slope;
-		}
-		if (isfinite(distance_estimate_buffer[ap][i].rtt)) {
-			temp_rtt[num_rtt++] = distance_estimate_buffer[ap][i].rtt;
 		}
 	}
 
 	k_mutex_unlock(&distance_estimate_buffer_mutex);
 
 	result.ifft = median_inplace(num_ifft, temp_ifft);
-	result.phase_slope = median_inplace(num_phase_slope, temp_phase_slope);
-	result.rtt = median_inplace(num_rtt, temp_rtt);
 
 	return result;
 }
@@ -367,18 +356,33 @@ float estimate_distance(struct net_buf_simple *local_steps, struct net_buf_simpl
 					   process_ranging_header, NULL, process_step_data,
 					   &m_cs_de_report);
 
+	/* Tone-quality gate, matching the official ras_initiator sample: an AP's estimate is
+	 * only trustworthy when enough channels carried a HIGH-quality tone. extract_pcts only
+	 * counts HIGH-quality tones into m_n_iqs, so this is the >=15-good-tones check. Set it
+	 * before cs_de_calc() so the estimator sees it. IFFT-only — we do not use RTT, so there
+	 * is no rtt fallback. */
+	for (uint8_t ap = 0; ap < m_cs_de_report.n_ap; ap++) {
+		uint8_t ok_tones = 0;
+
+		for (uint16_t ch = 0; ch < CS_DE_NUM_CHANNELS; ch++) {
+			if (m_n_iqs[ap][ch] >= 1) {
+				ok_tones++;
+			}
+		}
+		m_cs_de_report.tone_quality[ap] = (ok_tones >= TONE_QI_OK_TONE_COUNT_THRESHOLD)
+						  ? CS_DE_TONE_QUALITY_OK
+						  : CS_DE_TONE_QUALITY_BAD;
+	}
+
 	cs_de_quality_t quality = cs_de_calc(&m_cs_de_report);
 
-	if (quality != CS_DE_QUALITY_OK) {
-		/* Diagnostic: a completed ranging whose IFFT/phase/RTT all failed cs_de's
-		 * internal quality gate. Previously dropped silently — which read as a
-		 * "stall" (no DIST, no error) on the serial output. Log the raw per-method
-		 * estimates and tone count so we can see why (NaN ifft, too few good tones…). */
-		printk("DROP:quality=DO_NOT_USE,AP:%d,SAMPLES:%d,ifft:%.3f,phase:%.3f,rtt:%.3f\n",
+	/* Drop the procedure unless cs_de is happy AND there were enough HIGH-quality tones.
+	 * Storing low-tone-quality procedures was a source of biased / near-field IFFT
+	 * outliers. Logged so a persistent drop is visible rather than reading as a stall. */
+	if (quality != CS_DE_QUALITY_OK || m_cs_de_report.tone_quality[0] != CS_DE_TONE_QUALITY_OK) {
+		printk("DROP:AP:%d,SAMPLES:%d,ifft:%.3f\n",
 		       m_cs_de_report.n_ap, count_tone_samples(0),
-		       (double)m_cs_de_report.distance_estimates[0].ifft,
-		       (double)m_cs_de_report.distance_estimates[0].phase_slope,
-		       (double)m_cs_de_report.distance_estimates[0].rtt);
+		       (double)m_cs_de_report.distance_estimates[0].ifft);
 		return 0.0f;
 	}
 
