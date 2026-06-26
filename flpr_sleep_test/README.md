@@ -1,13 +1,13 @@
 # flpr_sleep_test
 
 > **Disclaimer:** This document reflects my current understanding of the hardware and SDK
-> behaviour. It may be incomplete or incorrect — treat it as a starting point for investigation
+> behaviour. It may be incomplete or incorrect - treat it as a starting point for investigation
 > rather than authoritative documentation.
 
 Multicore benchmark measuring FLPR core sleep power consumption on nRF54H20, nRF54LM20A, and nRF54L15.
 
 The APP core launches the FLPR core, configures RAM retention, then sleeps forever.
-The FLPR core runs a compute workload, logs a counter, then enters a timed sleep — repeating indefinitely.
+The FLPR core runs a compute workload, logs a counter, then enters a timed sleep - repeating indefinitely.
 PM selects the deepest achievable sleep state based on the configured sleep duration and the
 `min-residency-us` values in the board FLPR overlay.
 
@@ -29,8 +29,8 @@ PM selects the deepest achievable sleep state based on the configured sleep dura
 flpr_sleep_test/
 ├── CMakeLists.txt          # App core image
 ├── Kconfig                 # Shared Kconfig (both images)
-├── prj.conf                # App — logging enabled (console tests)
-├── prj_silent.conf         # App — logging disabled (PPK2 power measurements)
+├── prj.conf                # App - logging enabled (console tests)
+├── prj_silent.conf         # App - logging disabled (PPK2 power measurements)
 ├── sysbuild.cmake          # Launches remote_flpr image
 ├── sysbuild.conf
 ├── testcase.yaml           # Twister test definitions
@@ -43,15 +43,15 @@ flpr_sleep_test/
 └── remote/
     ├── CMakeLists.txt      # FLPR core image
     ├── Kconfig
-    ├── prj.conf            # FLPR — logging enabled
-    ├── prj_silent.conf     # FLPR — logging disabled + tickless
+    ├── prj.conf            # FLPR - logging enabled
+    ├── prj_silent.conf     # FLPR - logging disabled + tickless
     ├── boards/
     │   ├── nrf54h20dk_nrf54h20_cpuflpr.overlay
     │   ├── nrf54lm20dk_nrf54lm20a_cpuflpr.overlay
     │   └── nrf54l15dk_nrf54l15_cpuflpr.overlay
     └── src/
         ├── main_flpr.c     # FLPR core: compute workload + k_msleep
-        └── power_off.c     # Zephyr PM hooks — maps substates to VPR sleep CSR writes
+        └── power_off.c     # Zephyr PM hooks - maps substates to VPR sleep CSR writes
 ```
 
 ---
@@ -100,20 +100,20 @@ Or just add the extra CMAKE args manually
 
 ### 1. Periodic wakeup sawtooth during sleep (LM20A + L15)
 
-**Symptom:** During sleep, a sawtooth waveform of ~6–12 µA appears with a period of ~7 ms,
+**Symptom:** During sleep, a sawtooth waveform of ~6-12 µA appears with a period of ~7 ms,
 resulting in a sleep average of about 3.5 µA.
 
 **Investigation so far:**
-- `CONFIG_TICKLESS_KERNEL=y` was added to both app and remote `prj_silent.conf` — no effect on
+- `CONFIG_TICKLESS_KERNEL=y` was added to both app and remote `prj_silent.conf` - no effect on
   the sawtooth period or amplitude. The tick interrupt is not the cause.
-- `CONFIG_NRF_GRTC_TIMER_AUTO_KEEP_ALIVE=y` is present in the built config and is a candidate —
+- `CONFIG_NRF_GRTC_TIMER_AUTO_KEEP_ALIVE=y` is present in the built config and is a candidate -
   it periodically wakes the system to service the GRTC SYSCOUNTER. However this cannot be
   directly disabled (no user-assignable Kconfig prompt) and has not been confirmed as the root cause.
 - Root cause is not yet confirmed.
 
 ---
 
-### 2. Hibernate wakeup — no explicit VPR reset required (LM20A + L15)
+### 2. Hibernate wakeup - no explicit VPR reset required (LM20A + L15)
 
 **Background:** The datasheet describes hibernate as a state where the FLPR powers off and saves
 its register context to SRAM. On wakeup the FLPR is expected to reset and restore context from

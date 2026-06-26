@@ -317,7 +317,7 @@ int ble_write(bool state) {
     static struct bt_gatt_write_params write_params_led;
     struct bt_conn *c = ble_info.connection; 
     if (!c) {
-        printk("LED write skipped – not connected\n");
+        printk("LED write skipped - not connected\n");
         sys_reboot(SYS_REBOOT_COLD);
         return -ENOTCONN;
     }

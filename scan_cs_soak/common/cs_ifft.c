@@ -1,5 +1,5 @@
 /*
- * scan_cs_soak — shared IPT/IFFT distance estimator (see cs_ifft.h).
+ * scan_cs_soak - shared IPT/IFFT distance estimator (see cs_ifft.h).
  *
  * Lifted from the ipt_swap initiator: parse the HIGH-quality mode-2 tones from the
  * local subevent (which, with IPT, already carry the combined initiator+reflector
@@ -90,7 +90,7 @@ static float get_filtered_distance(void)
 static void pcts_parse(uint8_t channel_index,
 		       struct bt_hci_le_cs_step_data_tone_info *local_tone_info)
 {
-	/* Only accept HIGH-quality tones (matches ras_initiator) — a low-quality tone
+	/* Only accept HIGH-quality tones (matches ras_initiator) - a low-quality tone
 	 * biases the estimate. Skipped channels stay zero and don't count. */
 	if (local_tone_info[0].quality_indicator != BT_HCI_LE_CS_TONE_QUALITY_HIGH) {
 		return;

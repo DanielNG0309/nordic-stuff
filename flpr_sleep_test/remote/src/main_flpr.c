@@ -5,12 +5,12 @@
 LOG_MODULE_REGISTER(flpr_sleep_test, LOG_LEVEL_INF);
 
 /*
- * FLPR core image — shared by nRF54H20, nRF54LM20A and nRF54L15.
+ * FLPR core image - shared by nRF54H20, nRF54LM20A and nRF54L15.
  *
  * Active phase: quadratic computation (ax² + bx + c) to simulate a
  * realistic RISC-V workload using MUL/ADD instructions.
  * Tune COMPUTE_ITERATIONS to achieve ~1-2 ms active time at the FLPR
- * clock frequency — verify the pulse width on a PPK trace.
+ * clock frequency - verify the pulse width on a PPK trace.
  *
  * PM selects the sleep state based on TEST_SLEEP_DURATION_MS vs the
  * min-residency-us values defined in the board FLPR overlay:
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(flpr_sleep_test, LOG_LEVEL_INF);
  * Note: nRF54H20 FLPR has only two power states (wait / suspend-to-ram).
  *
  * Baseline mode (CONFIG_TEST_BASELINE_SLEEP=y):
- *   FLPR sleeps forever — no compute, no GRTC wakeup.  Used to measure
+ *   FLPR sleeps forever - no compute, no GRTC wakeup.  Used to measure
  *   the true system current floor.
  */
 

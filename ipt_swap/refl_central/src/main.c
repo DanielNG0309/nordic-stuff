@@ -5,7 +5,7 @@
  */
 
 /** @file
- *  @brief Channel Sounding Reflector with Inline PCT Transfer — BLE-central hub.
+ *  @brief Channel Sounding Reflector with Inline PCT Transfer - BLE-central hub.
  *
  *  ROLE SWAP: this CS reflector is the BLE CENTRAL. It scans for and connects to
  *  up to CONFIG_BT_MAX_CONN peripheral CS initiators, and drives the full CS setup
@@ -15,7 +15,7 @@
  *
  *  Being the central is the whole point of the multi-link variant: the central can
  *  SPACE the links (CONFIG_BT_CTLR_SDC_CENTRAL_ACL_EVENT_SPACING_DEFAULT) with a
- *  uniform connection interval so the per-link CS subevents do not collide — the
+ *  uniform connection interval so the per-link CS subevents do not collide - the
  *  collision control a peripheral-reflector structurally cannot do.
  */
 
@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(app_main, LOG_LEVEL_INF);
 /* Per-link connection interval (units of 1.25 ms). UNIFORM across links: with round-robin
  * only one link ranges at a time, so there is no radio contention to de-correlate. Equal
  * intervals keep the central's links at a FIXED offset from each other (ACL event spacing)
- * forever, so they never collide — whereas DISTINCT intervals make the anchors drift, and a
+ * forever, so they never collide - whereas DISTINCT intervals make the anchors drift, and a
  * link's 5 ms CS subevent periodically clobbers another link's ACL event, aborting its
  * procedures and starving it. (De-correlation was the right tool for the free-running
  * attempt; it is the wrong tool once round-robin removes the contention.)
@@ -73,7 +73,7 @@ static bool link_ready[CONFIG_BT_MAX_CONN];
 
 /* The peripheral-initiator's GATT layout is fixed (GATT + GAP + our CS-Turn service, all
  * from identical firmware), so the CS-Turn handles are deterministic: char value at 18,
- * CCC at 19 (verified by a discovery dump). We use them directly — the enumerate-and-match
+ * CCC at 19 (verified by a discovery dump). We use them directly - the enumerate-and-match
  * GATT discovery is racy in this config. A production build should discover via bt_gatt_dm. */
 #define CS_TURN_VAL_HANDLE 18
 #define CS_TURN_CCC_HANDLE 19
@@ -383,7 +383,7 @@ int main(void)
 {
 	int err;
 
-	LOG_INF("Starting Channel Sounding IPT Reflector — BLE central hub (MAX_CONN=%d)",
+	LOG_INF("Starting Channel Sounding IPT Reflector - BLE central hub (MAX_CONN=%d)",
 		CONFIG_BT_MAX_CONN);
 
 	dk_leds_init();
@@ -417,7 +417,7 @@ int main(void)
 					established);
 				break;
 			}
-			continue; /* none yet — keep scanning */
+			continue; /* none yet - keep scanning */
 		}
 
 		struct bt_conn *c = last_connected;
@@ -444,7 +444,7 @@ int main(void)
 
 	/* ROUND-ROBIN PHASE: grant one ready link a turn (write GO), wait for its DONE
 	 * notification (bounded burst), then advance. Only one link ranges at a time, so the
-	 * links never contend for the radio — the fix for the free-running starvation.
+	 * links never contend for the radio - the fix for the free-running starvation.
 	 *
 	 * AUTO-RECONNECT is folded into the same loop: an empty slot (dropped/reset anchor) is
 	 * scanned + re-established instead of being granted a turn. Collision-free because no CS
@@ -471,7 +471,7 @@ int main(void)
 				LOG_WRN("[slot %d] turn DONE timeout.", slot);
 			}
 		} else if (c == NULL) {
-			/* Dropped slot — reconnect + re-establish it. */
+			/* Dropped slot - reconnect + re-establish it. */
 			err = bt_scan_start(BT_SCAN_TYPE_SCAN_PASSIVE);
 			if (!err || err == -EALREADY) {
 				if (k_sem_take(&sem_connected, K_MSEC(1500)) == 0) {

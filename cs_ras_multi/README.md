@@ -1,21 +1,21 @@
-# cs_ras_multi — 2-connection RAS + IFFT round-robin Channel Sounding
+# cs_ras_multi - 2-connection RAS + IFFT round-robin Channel Sounding
 
 A multi-connection Bluetooth LE **Channel Sounding** ranging reference on nRF54L15 that uses the
 **Ranging Service (RAS)** to transfer step data and **Nordic's official `cs_de` IFFT** estimator to
 compute distance. One reflector serializes ranging across several initiators with a **round-robin**,
-so multiple initiators share one reflector without colliding — and it does so with **persistent
+so multiple initiators share one reflector without colliding - and it does so with **persistent
 connections that are never torn down**, which is the key to avoiding the repeated-CS reset problem.
 
 This is the RAS counterpart to the IPT solution in [`../cs_ipt_multi`](../cs_ipt_multi). RAS is
-practical only to ~2–3 connections (see *Scaling limits* below); **for more anchors use the IPT
+practical only to ~2-3 connections (see *Scaling limits* below); **for more anchors use the IPT
 approach.** This sample is fixed at **2 initiators** on purpose.
 
 ## Topology
 
-- **Reflector** (`projects/reflector_build`, advertises as `9999`) — the shared device (in a tracking
+- **Reflector** (`projects/reflector_build`, advertises as `9999`) - the shared device (in a tracking
   deployment, the moving target). BLE peripheral + CS reflector. Hosts a small **sync** GATT service
   and runs a round-robin orchestrator.
-- **Initiator** (`projects/initator_build`, name `0000`) — a ranging node (in a tracking deployment,
+- **Initiator** (`projects/initator_build`, name `0000`) - a ranging node (in a tracking deployment,
   a fixed anchor). BLE central + CS initiator. Connects to the reflector, and on each granted turn
   runs one CS procedure and computes an **IFFT distance locally** via `cs_de`. Flash the same image to
   every initiator.
@@ -54,7 +54,7 @@ console for the `DIST:` lines.
 
 RAS transfers per-procedure step data over a GATT service and reassembles it on the initiator, which
 bounds how many connections one reflector can sustain. On nRF54L15 the controller's
-`BT_CTLR_SDC_CS_COUNT` and `BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT` cap the practical count to ~2–3,
+`BT_CTLR_SDC_CS_COUNT` and `BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT` cap the practical count to ~2-3,
 and RAM climbs quickly with connection count. This reference is therefore set to **2 initiators**
 (`CONFIG_BT_MAX_CONN=2` on the reflector). For more anchors, the **IPT** approach in
 [`../cs_ipt_multi`](../cs_ipt_multi) carries the reflector's measurement inside the returned tones
@@ -65,4 +65,4 @@ and RAM climbs quickly with connection count. This reference is therefore set to
 `lib/calc/calc.c` uses Nordic's official `cs_de` library (`CONFIG_CS_CALC=y` → selects `BT_CS_DE`,
 FPU). It mirrors the parse-and-estimate logic of the official `ras_initiator` sample, feeding a small
 sliding-window median (`DE_SLIDING_WINDOW_SIZE` in `lib/global.h`) to reject multipath/outliers. The
-closed-source phase-slope library was removed — this build is IFFT-only.
+closed-source phase-slope library was removed - this build is IFFT-only.

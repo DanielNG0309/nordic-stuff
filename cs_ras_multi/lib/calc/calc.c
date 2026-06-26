@@ -359,7 +359,7 @@ float estimate_distance(struct net_buf_simple *local_steps, struct net_buf_simpl
 	/* Tone-quality gate, matching the official ras_initiator sample: an AP's estimate is
 	 * only trustworthy when enough channels carried a HIGH-quality tone. extract_pcts only
 	 * counts HIGH-quality tones into m_n_iqs, so this is the >=15-good-tones check. Set it
-	 * before cs_de_calc() so the estimator sees it. IFFT-only — we do not use RTT, so there
+	 * before cs_de_calc() so the estimator sees it. IFFT-only - we do not use RTT, so there
 	 * is no rtt fallback. */
 	for (uint8_t ap = 0; ap < m_cs_de_report.n_ap; ap++) {
 		uint8_t ok_tones = 0;

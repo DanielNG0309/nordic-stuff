@@ -1,16 +1,16 @@
-# cs_ipt_multi — Multiconnection Channel Sounding (IPT) distance ranging
+# cs_ipt_multi - Multiconnection Channel Sounding (IPT) distance ranging
 
 Multi-anchor Bluetooth LE **Channel Sounding** ranging on nRF54L15, using Nordic's
 **CS IPT** (Inline PCT Transfer) so each anchor computes an **IFFT** distance estimate from its
-own subevent data — no Ranging Service (RAS) GATT transfer. Built for an indoor moving-target
+own subevent data - no Ranging Service (RAS) GATT transfer. Built for an indoor moving-target
 use case: several fixed anchors locate one moving target.
 
 ## Topology
 
-- **`target_reflector/`** — the moving **target**: BLE peripheral + CS reflector. Advertises as
+- **`target_reflector/`** - the moving **target**: BLE peripheral + CS reflector. Advertises as
   `Nordic CS IPT Reflector`, accepts up to `CONFIG_BT_MAX_CONN` anchors, and hosts a small
   **"CS-turn"** GATT service used to grant ranging turns round-robin.
-- **`anchor_initiator/`** — a fixed **anchor**: BLE central + CS initiator. Connects to the target,
+- **`anchor_initiator/`** - a fixed **anchor**: BLE central + CS initiator. Connects to the target,
   subscribes to the CS-turn service, and on each granted turn runs one bounded CS procedure and
   computes/reports an IFFT distance locally (`cs_de_ifft`). Flash the same image to every anchor.
 

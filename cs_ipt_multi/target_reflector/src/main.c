@@ -94,7 +94,7 @@ static const struct bt_le_cs_set_default_settings_param default_settings = {
 
 /* New connections are handed to a worker thread. All HCI-synchronous work
  * (bt_le_cs_set_default_settings + advertising restart) runs there, never in the
- * connection callback context — blocking in the callback was causing peer
+ * connection callback context - blocking in the callback was causing peer
  * connections to "fail to establish" under multi-anchor contention. */
 K_MSGQ_DEFINE(new_conn_q, sizeof(struct bt_conn *), CONFIG_BT_MAX_CONN, sizeof(void *));
 static K_SEM_DEFINE(sem_refl_work, 0, 1);

@@ -1,5 +1,5 @@
 /*
- * scan_cs_soak — GATEWAY
+ * scan_cs_soak - GATEWAY
  *
  * Reproduces a continuously-scanning BLE gateway architecture:
  *   - runs as a continuous BLE Observer (scanner is started once and NEVER stopped),
@@ -13,7 +13,7 @@
  *
  * When this device is the CS initiator (default role) it computes the IFFT distance
  * locally via IPT (Inline PCT Transfer) + cs_de and prints a DIST: line each cycle.
- * The soak's core claim — scanner never wedges, teardown stays clean — is independent
+ * The soak's core claim - scanner never wedges, teardown stays clean - is independent
  * of the estimator; completed CS procedures alone already prove CS ran.
  */
 
@@ -165,7 +165,7 @@ static void procedure_enable_cb(struct bt_conn *conn, uint8_t status,
 	}
 
 	if (params->state == 0) {
-		/* Procedures disabled — either we asked, or the controller reached
+		/* Procedures disabled - either we asked, or the controller reached
 		 * max_procedure_count. Safe to remove the config now.
 		 */
 		k_sem_give(&sem_procedure_disabled);
@@ -208,7 +208,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	char name[NAME_LEN] = {};
 	int err;
 
-	/* Count EVERY advert — this is the scanner-health metric. It must keep
+	/* Count EVERY advert - this is the scanner-health metric. It must keep
 	 * climbing across CS cycles; if it flatlines, the scanner has wedged.
 	 */
 	atomic_inc(&scan_reports);
@@ -390,10 +390,10 @@ static int run_cs_cycle(struct bt_conn *conn)
 		cs_ifft_compute_print();
 	}
 
-	/* Explicit teardown — the gateway cleanup path: disable procedures, wait
+	/* Explicit teardown - the gateway cleanup path: disable procedures, wait
 	 * for the disable to actually complete, THEN remove the config. The
 	 * controller may already have auto-disabled after max_procedure_count, so
-	 * the disable request can return an error — tolerate it and rely on the
+	 * the disable request can return an error - tolerate it and rely on the
 	 * disabled callback (sem_procedure_disabled) before removing the config.
 	 */
 	en.enable = 0;
@@ -431,7 +431,7 @@ int main(void)
 {
 	int err;
 
-	printk("\n*** scan_cs_soak GATEWAY (CS %s) — continuous scan + CS connect/disconnect loop ***\n",
+	printk("\n*** scan_cs_soak GATEWAY (CS %s) - continuous scan + CS connect/disconnect loop ***\n",
 	       APP_ROLE_STR);
 
 	err = bt_enable(NULL);

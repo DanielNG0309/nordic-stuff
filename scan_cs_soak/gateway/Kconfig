@@ -6,7 +6,7 @@ config APP_CS_ROLE_REFLECTOR
 	help
 	  By default the gateway is the CS initiator. Enable this to make the gateway
 	  the CS reflector instead. The gateway stays the BLE central and still drives
-	  ALL CS setup (capabilities, config, security) — that rule is non-negotiable;
+	  ALL CS setup (capabilities, config, security) - that rule is non-negotiable;
 	  the peer peripheral becomes the CS initiator and enables the procedures
 	  (role-swap). Build the matching target with CONFIG_APP_CS_ROLE_INITIATOR=y.
 

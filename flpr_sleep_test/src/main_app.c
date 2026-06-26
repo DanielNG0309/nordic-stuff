@@ -49,7 +49,7 @@ int main(void)
 	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, MEMCONF_POWER_RET_MEM13_Pos, false);
 	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, MEMCONF_POWER_RET_MEM14_Pos, false);
 	
-	/* Keep block 15 — FLPR VPR save area (RAM01 section 7) */
+	/* Keep block 15 - FLPR VPR save area (RAM01 section 7) */
 	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, MEMCONF_POWER_RET_MEM15_Pos, true);
 	/* Enable VPR context restore feature (block 32 = POWER[1].RET.MEM[0]) */
 	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 1, MEMCONF_POWER_RET_MEM0_Pos, true);

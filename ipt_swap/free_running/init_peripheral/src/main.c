@@ -66,7 +66,7 @@ static K_SEM_DEFINE(sem_cadence_assigned, 0, 1);
 static volatile uint8_t assigned_proc_interval; /* connection-events between CS procedures */
 
 /* Starvation self-heal: if CS is enabled but no procedure completes for a while, the link
- * lost the SDC scheduling lottery against the others — re-roll its phase by toggling CS. */
+ * lost the SDC scheduling lottery against the others - re-roll its phase by toggling CS. */
 static K_SEM_DEFINE(sem_proc_disabled, 0, 1);
 static volatile int64_t last_complete_ms;
 static volatile bool cs_running;
@@ -75,7 +75,7 @@ static volatile bool cs_running;
 static struct bt_conn *connection;
 static struct bt_conn_le_cs_config cs_config;
 
-/* ROLE-SWAP SPIKE: this CS initiator is now the BLE PERIPHERAL — it advertises and the
+/* ROLE-SWAP SPIKE: this CS initiator is now the BLE PERIPHERAL - it advertises and the
  * CS reflector (now central) connects to it. The CS-initiator setup is unchanged. */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -171,7 +171,7 @@ static void distance_estimates_update(void)
 	}
 
 	/* Tone-quality gate (matches ras_initiator): require enough HIGH-quality tones
-	 * before trusting the IFFT — too few good tones gives biased/near-field estimates. */
+	 * before trusting the IFFT - too few good tones gives biased/near-field estimates. */
 	if (samples < TONE_QI_OK_TONE_COUNT_THRESHOLD) {
 		printk("DROP:AP:0,SAMPLES:%d\n", samples);
 		k_sem_give(&sem_distance_estimate_updated);
@@ -215,7 +215,7 @@ static void distance_estimates_update(void)
 static void pcts_parse(uint8_t channel_index,
 		       struct bt_hci_le_cs_step_data_tone_info *local_tone_info)
 {
-	/* Only accept HIGH-quality tones, matching the official ras_initiator sample —
+	/* Only accept HIGH-quality tones, matching the official ras_initiator sample -
 	 * feeding a low-quality tone to the IFFT biases the estimate. Skipped channels stay
 	 * zero (iq is cleared per procedure) and so don't count toward the tone total. */
 	if (local_tone_info[0].quality_indicator != BT_HCI_LE_CS_TONE_QUALITY_HIGH) {
@@ -430,7 +430,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	connection = NULL;
 	dk_set_led_off(CON_STATUS_LED);
 
-	/* No reboot — re-advertise so the central can reconnect. */
+	/* No reboot - re-advertise so the central can reconnect. */
 	(void)bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, ad, ARRAY_SIZE(ad), NULL, 0);
 }
 
@@ -636,7 +636,7 @@ static void starve_watchdog(void)
 }
 K_THREAD_DEFINE(starve_tid, 2048, starve_watchdog, NULL, NULL, NULL, 7, 0, 0);
 
-/* ROLE-SWAP SPIKE: scan helpers removed — this device now advertises (peripheral). */
+/* ROLE-SWAP SPIKE: scan helpers removed - this device now advertises (peripheral). */
 
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected_cb,

@@ -50,7 +50,7 @@ void acquisition_thread() {
         TRY(cs_start_ranging(c));
         distance = cs_calc(c);
         /* Signal completion AFTER computing, so the reflector advances on a real
-         * measurement rather than merely "started" — this makes its ranging_complete
+         * measurement rather than merely "started" - this makes its ranging_complete
          * timeout an actual stall detector. Always signal (even on a failed/zero
          * measurement) so the reflector never blocks waiting on us. */
         TRY(sync_signal_completion(ble_write));

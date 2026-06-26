@@ -1,10 +1,10 @@
 /*
- * scan_cs_soak — TARGET
+ * scan_cs_soak - TARGET
  *
  * The peer the gateway ranges against. Advertises connectably as "CS Sample" and
  * re-advertises after each disconnect so the gateway can reconnect every cycle.
  *
- * CS role is selectable (compile-time), always the OPPOSITE of the gateway —
+ * CS role is selectable (compile-time), always the OPPOSITE of the gateway -
  * because CS role is independent of BLE role, and the gateway (BLE central) always
  * drives the CS setup either way:
  *   - default: CS reflector (gateway = CS initiator). The target just enables the
@@ -188,7 +188,7 @@ int main(void)
 	const char *role_str = "reflector";
 #endif
 
-	printk("\n*** scan_cs_soak TARGET (CS %s) — re-advertise loop ***\n", role_str);
+	printk("\n*** scan_cs_soak TARGET (CS %s) - re-advertise loop ***\n", role_str);
 
 	err = bt_enable(NULL);
 	if (err) {

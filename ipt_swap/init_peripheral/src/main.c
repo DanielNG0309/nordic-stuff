@@ -70,7 +70,7 @@ static volatile uint32_t turn_proc_count;
 static struct bt_conn *connection;
 static struct bt_conn_le_cs_config cs_config;
 
-/* ROLE-SWAP SPIKE: this CS initiator is now the BLE PERIPHERAL — it advertises and the
+/* ROLE-SWAP SPIKE: this CS initiator is now the BLE PERIPHERAL - it advertises and the
  * CS reflector (now central) connects to it. The CS-initiator setup is unchanged. */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -166,7 +166,7 @@ static void distance_estimates_update(void)
 	}
 
 	/* Tone-quality gate (matches ras_initiator): require enough HIGH-quality tones
-	 * before trusting the IFFT — too few good tones gives biased/near-field estimates. */
+	 * before trusting the IFFT - too few good tones gives biased/near-field estimates. */
 	if (samples < TONE_QI_OK_TONE_COUNT_THRESHOLD) {
 		printk("DROP:AP:0,SAMPLES:%d\n", samples);
 		k_sem_give(&sem_distance_estimate_updated);
@@ -210,7 +210,7 @@ static void distance_estimates_update(void)
 static void pcts_parse(uint8_t channel_index,
 		       struct bt_hci_le_cs_step_data_tone_info *local_tone_info)
 {
-	/* Only accept HIGH-quality tones, matching the official ras_initiator sample —
+	/* Only accept HIGH-quality tones, matching the official ras_initiator sample -
 	 * feeding a low-quality tone to the IFFT biases the estimate. Skipped channels stay
 	 * zero (iq is cleared per procedure) and so don't count toward the tone total. */
 	if (local_tone_info[0].quality_indicator != BT_HCI_LE_CS_TONE_QUALITY_HIGH) {
@@ -429,7 +429,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	connection = NULL;
 	dk_set_led_off(CON_STATUS_LED);
 
-	/* No reboot — re-advertise so the central can reconnect. */
+	/* No reboot - re-advertise so the central can reconnect. */
 	(void)bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, ad, ARRAY_SIZE(ad), NULL, 0);
 }
 
@@ -577,7 +577,7 @@ static void security_enable_cb(struct bt_conn *conn, uint8_t status)
 	k_sem_give(&sem_cs_security_enabled);
 
 	/* The central (reflector) drove ACL security + capabilities + IPT config + CS security.
-	 * As the CS INITIATOR we set procedure parameters here, but DO NOT enable procedures yet —
+	 * As the CS INITIATOR we set procedure parameters here, but DO NOT enable procedures yet -
 	 * the turn thread enables a bounded burst only when the central grants this link a turn
 	 * (round-robin), so concurrent links don't starve each other. max_procedure_count stays 0
 	 * (continuous); the burst is bounded by disabling after CS_TURN_BURST procedures. */
@@ -637,7 +637,7 @@ static void procedure_enable_cb(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-/* ROLE-SWAP SPIKE: scan helpers removed — this device now advertises (peripheral). */
+/* ROLE-SWAP SPIKE: scan helpers removed - this device now advertises (peripheral). */
 
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected_cb,

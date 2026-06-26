@@ -1,4 +1,4 @@
-ipt_swap — refl_central (CS reflector + BLE central)
+ipt_swap - refl_central (CS reflector + BLE central)
 ####################################################
 
 This app is the **central-reflector** of the role-swapped ``ipt_swap`` reference: it is the BLE

@@ -1,5 +1,5 @@
 /*
- * scan_cs_soak — GATEWAY_MODESWITCH
+ * scan_cs_soak - GATEWAY_MODESWITCH
  *
  * The Observer <-> CS *mode switch* architecture (the one a scanning gateway might
  * naively attempt), implemented correctly:
@@ -9,7 +9,7 @@
  *     and then RESTART the scanner.
  *
  * The difference vs the continuous `gateway`: there is NO
- * CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL — the scanner is genuinely stopped
+ * CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL - the scanner is genuinely stopped
  * while CS runs and restarted afterwards. The restart is the classic failure
  * point for this pattern; here it recovers cleanly every cycle (no reboot).
  *
@@ -255,7 +255,7 @@ static int resume_scan(void)
 	int err = bt_le_scan_start(BT_LE_SCAN_ACTIVE_CONTINUOUS, device_found);
 
 	if (err) {
-		/* The classic failure point for this pattern — must NOT happen. */
+		/* The classic failure point for this pattern - must NOT happen. */
 		printk("[ms] !!! scan RESTART FAILED (%d) !!!\n", err);
 	} else {
 		scan_restarts++;
@@ -453,7 +453,7 @@ int main(void)
 {
 	int err;
 
-	printk("\n*** scan_cs_soak GATEWAY_MODESWITCH (CS %s) — stop-scan -> CS -> restart-scan loop ***\n",
+	printk("\n*** scan_cs_soak GATEWAY_MODESWITCH (CS %s) - stop-scan -> CS -> restart-scan loop ***\n",
 	       APP_ROLE_STR);
 
 	err = bt_enable(NULL);

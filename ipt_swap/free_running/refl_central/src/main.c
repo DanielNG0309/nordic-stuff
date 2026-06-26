@@ -5,7 +5,7 @@
  */
 
 /** @file
- *  @brief Channel Sounding Reflector with IPT — BLE-central hub, FREE-RUNNING FAIRNESS.
+ *  @brief Channel Sounding Reflector with IPT - BLE-central hub, FREE-RUNNING FAIRNESS.
  *
  *  ROLE SWAP: this CS reflector is the BLE CENTRAL. It scans for and connects to up to
  *  CONFIG_BT_MAX_CONN peripheral CS initiators and drives the full CS setup for each link
@@ -74,7 +74,7 @@ static bool link_ready[CONFIG_BT_MAX_CONN];
 
 /* The peripheral-initiator's GATT layout is fixed (GATT + GAP + our CS-Cadence service, all
  * from identical firmware), so the cadence characteristic handle is deterministic: char value
- * at 18 (verified by a discovery dump). We write it directly — the enumerate-and-match GATT
+ * at 18 (verified by a discovery dump). We write it directly - the enumerate-and-match GATT
  * discovery is racy in this config. A production build should discover via bt_gatt_dm. */
 #define CS_TURN_VAL_HANDLE 18
 
@@ -372,7 +372,7 @@ int main(void)
 {
 	int err;
 
-	LOG_INF("Starting Channel Sounding IPT Reflector — BLE central hub (MAX_CONN=%d)",
+	LOG_INF("Starting Channel Sounding IPT Reflector - BLE central hub (MAX_CONN=%d)",
 		CONFIG_BT_MAX_CONN);
 
 	dk_leds_init();
@@ -406,7 +406,7 @@ int main(void)
 					established);
 				break;
 			}
-			continue; /* none yet — keep scanning */
+			continue; /* none yet - keep scanning */
 		}
 
 		struct bt_conn *c = last_connected;
@@ -441,7 +441,7 @@ int main(void)
 	LOG_INF("Free-running: %d link(s) CS-enabled; entering reconnect supervisor.", established);
 
 	/* RECONNECT SUPERVISOR: keep all slots populated. When a link drops (disconnected_cb frees
-	 * its slot), scan, reconnect, re-drive CS setup, and re-assign its cadence — so a dropped or
+	 * its slot), scan, reconnect, re-drive CS setup, and re-assign its cadence - so a dropped or
 	 * reset anchor self-heals back into the ranging set. Scanning runs only while a slot is open. */
 	while (true) {
 		int free_slot = -1;
@@ -463,7 +463,7 @@ int main(void)
 			continue;
 		}
 		if (k_sem_take(&sem_connected, K_MSEC(4000)) != 0) {
-			continue; /* no peer yet — keep scanning */
+			continue; /* no peer yet - keep scanning */
 		}
 
 		struct bt_conn *c = last_connected;

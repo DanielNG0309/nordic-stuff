@@ -1,5 +1,5 @@
 /*
- * scan_cs_soak — BEACON
+ * scan_cs_soak - BEACON
  *
  * A constant non-connectable advertiser. Its only job is to emit a steady stream
  * of advertising packets so the gateway can measure that its scanner keeps
@@ -18,7 +18,7 @@ int main(void)
 {
 	int err;
 
-	printk("\n*** scan_cs_soak BEACON — constant non-connectable advertiser ***\n");
+	printk("\n*** scan_cs_soak BEACON - constant non-connectable advertiser ***\n");
 
 	err = bt_enable(NULL);
 	if (err) {

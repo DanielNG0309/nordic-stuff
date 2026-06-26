@@ -274,7 +274,7 @@ static void distance_estimates_update(void)
 	}
 
 	/* Tone-quality gate (matches ras_initiator): require enough HIGH-quality tones
-	 * (pcts_parse only kept HIGH ones) before trusting the IFFT — too few good tones
+	 * (pcts_parse only kept HIGH ones) before trusting the IFFT - too few good tones
 	 * gives biased/near-field estimates. Drop the procedure otherwise. */
 	if (samples < TONE_QI_OK_TONE_COUNT_THRESHOLD) {
 		printk("DROP:AP:0,SAMPLES:%d\n", samples);
@@ -315,7 +315,7 @@ static void distance_estimates_update(void)
 static void pcts_parse(uint8_t channel_index,
 		       struct bt_hci_le_cs_step_data_tone_info *local_tone_info)
 {
-	/* Only accept HIGH-quality tones, matching the official ras_initiator sample —
+	/* Only accept HIGH-quality tones, matching the official ras_initiator sample -
 	 * feeding a low-quality tone to the IFFT biases the estimate. Skipped channels stay
 	 * zero (iq is cleared per procedure) and so don't count toward the tone total. */
 	if (local_tone_info[0].quality_indicator != BT_HCI_LE_CS_TONE_QUALITY_HIGH) {
@@ -813,7 +813,7 @@ int main(void)
 	 * has ~half the steps, so it COMPLETES faster (higher round-robin rate) and is exposed
 	 * to multi-connection radio collisions for less time (fewer subevent_abort=2). ~36
 	 * tones remain (>15 needed for IFFT); the 2 MHz comb still gives ~75 m IFFT unambiguous
-	 * range — fine for the <=30 m use case. */
+	 * range - fine for the <=30 m use case. */
 	bool keep_ch = true;
 
 	for (int ch = 0; ch < 80; ch++) {
@@ -897,7 +897,7 @@ int main(void)
 			goto recover;
 		}
 
-		/* CS setup — each step bounded; abort to recover on link loss or timeout. */
+		/* CS setup - each step bounded; abort to recover on link loss or timeout. */
 		if (!link_up || bt_le_cs_set_default_settings(connection, &default_settings)) {
 			goto recover;
 		}
@@ -935,7 +935,7 @@ int main(void)
 			if (k_sem_take(&sem_turn, K_SECONDS(2)) != 0) {
 				/* No grant this round. If we go ~6 s with no turn at all, our CS-turn
 				 * subscription was most likely clobbered on the reflector when our stale
-				 * (same-address) connection from before a reset got cleaned up — its
+				 * (same-address) connection from before a reset got cleaned up - its
 				 * bt_gatt_is_subscribed() then reads false and we're silently dropped from
 				 * the rotation forever (anchor stuck at "ready", never granted). Force a
 				 * re-subscribe (unsubscribe + re-discover) to rewrite the reflector's CCC.
@@ -961,7 +961,7 @@ int main(void)
 			k_sem_reset(&sem_subevent_results_parsed);
 
 			/* One bounded procedure (count=1); the controller auto-disables after it.
-			 * Do NOT wait on a disable event here — that extra latency turned the
+			 * Do NOT wait on a disable event here - that extra latency turned the
 			 * per-turn re-enable into "Command Disallowed" (0x0c) and killed ranging.
 			 * An occasional re-enable error just costs one turn (reflector advances). */
 			if (bt_le_cs_procedure_enable(connection, &enable_params) == 0) {

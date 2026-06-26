@@ -1,4 +1,4 @@
-ipt_swap — init_peripheral (CS initiator + BLE peripheral)
+ipt_swap - init_peripheral (CS initiator + BLE peripheral)
 ##########################################################
 
 This app is an **anchor** of the role-swapped ``ipt_swap`` reference: it is the BLE **peripheral**
@@ -13,7 +13,7 @@ initiator is the central that scans): here the initiator advertises and is conne
 
 Distance processing:
 
-* Tones are filtered by the **Tone Quality Indicator** — only HIGH-quality tones feed the IFFT, and
+* Tones are filtered by the **Tone Quality Indicator** - only HIGH-quality tones feed the IFFT, and
   a procedure is dropped unless at least ``TONE_QI_OK_TONE_COUNT_THRESHOLD`` (15) HIGH tones are
   present (no-op at close, clean range where all tones are HIGH).
 * A configurable offset (``CONFIG_APP_CS_DISTANCE_OFFSET_MM``) is subtracted from each estimate to
