@@ -67,17 +67,7 @@ a fixed cost (a re-enabled CS procedure runs ~6× slower than continuous single-
   tones are present (matching the stock `ras_initiator`; the stock `ipt_initiator` does *not* filter).
   At close, clean line-of-sight every tone is HIGH so the filter is a no-op (`SAMPLES` stays ~32); it
   only removes tones at longer range / multipath.
-- **Distance bias is real, inherent to `cs_de`, and distance-dependent.** Measured on the nRF54L15
-  (single anchor, median filter), raw reading vs truth:
 
-  | true | raw | bias |
-  | --- | --- | --- |
-  | 0.5 m | ~1.37 m | ~0.87 m |
-  | 1.0 m | ~1.6–1.8 m | ~0.6–0.8 m |
-  | 2.0 m | ~2.41 m | ~0.41 m (confirmed ×3, no multipath) |
-
-  The bias shrinks with range (largest in the near field). It's present in the stock sample too — we
-  did not change the CS config, NFFT, or estimator.
 - **`CONFIG_APP_CS_DISTANCE_OFFSET_MM`** subtracts a fixed offset from each estimate (before the
   median filter) to compensate. Because the bias is distance-dependent, pick the offset for your
   operating range: 800 mm is spot-on at ~1 m; 500 mm (the default here) gives ~±0.1 m across 1–2 m;
