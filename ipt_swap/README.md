@@ -8,6 +8,12 @@ computes its own IFFT distance locally (no RAS/GATT step-data transfer).
 This fits a hub-and-anchors deployment: one central-reflector "tag" + N peripheral-initiator
 "anchors", each anchor computing and reporting its own distance to the tag.
 
+> **Two multi-link schedulers:** this top-level sample uses the **round-robin turn
+> token** (reliable, even, ~7 Hz aggregate, 0 starvation — described below). An
+> alternative **free-running, de-correlated** scheduler (higher aggregate ~13–18 Hz
+> but with cold-start starvation on weak links) lives in
+> [`free_running/`](free_running/README.md).
+
 ## Why role-swap + IPT
 
 - **IPT** removes the per-procedure RAS GATT transfer (the bottleneck in RAS-based ranging).

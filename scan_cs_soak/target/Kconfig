@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+config APP_CS_ROLE_INITIATOR
+	bool "Target acts as CS initiator (peer/gateway is the CS reflector)"
+	help
+	  By default the target is the CS reflector. Enable this to make the target
+	  the CS initiator instead — paired with a gateway built with
+	  CONFIG_APP_CS_ROLE_REFLECTOR=y. The gateway (BLE central) still drives CS
+	  setup; this target enables the CS procedures once CS security is enabled.
+
+source "Kconfig.zephyr"
