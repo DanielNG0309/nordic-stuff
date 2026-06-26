@@ -933,17 +933,17 @@ int main(void)
 
 		while (link_up) {
 			if (k_sem_take(&sem_turn, K_SECONDS(2)) != 0) {
-				/* No grant this round. If we go ~8 s with no turn at all, our CS-turn
+				/* No grant this round. If we go ~6 s with no turn at all, our CS-turn
 				 * subscription was most likely clobbered on the reflector when our stale
 				 * (same-address) connection from before a reset got cleaned up — its
 				 * bt_gatt_is_subscribed() then reads false and we're silently dropped from
 				 * the rotation forever (anchor stuck at "ready", never granted). Force a
 				 * re-subscribe (unsubscribe + re-discover) to rewrite the reflector's CCC.
-				 * 8 s (4 x 2 s) is above the healthy worst-case inter-grant gap (~7 s) so a
-				 * slow round won't false-trigger; a false re-subscribe only costs ~1 turn. */
-				if (++no_grant >= 4 && link_up) {
+				 * 6 s (3 x 2 s) ~= the healthy worst-case inter-grant gap, so an occasional
+				 * slow round may false-trigger; that only costs ~1 turn. */
+				if (++no_grant >= 3 && link_up) {
 					no_grant = 0;
-					LOG_WRN("No grant in ~8s; re-subscribing to CS-turn service");
+					LOG_WRN("No grant in ~6s; re-subscribing to CS-turn service");
 					(void)bt_gatt_unsubscribe(connection, &turn_sub);
 					turn_value_handle = 0;
 					k_sem_reset(&sem_discovered);
