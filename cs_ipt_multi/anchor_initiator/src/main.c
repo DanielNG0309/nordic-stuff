@@ -929,10 +929,30 @@ int main(void)
 		LOG_INF("Anchor ready; ranging on round-robin grants");
 
 		/* One bounded CS burst per granted turn, until the link drops. */
+		int no_grant = 0;
+
 		while (link_up) {
 			if (k_sem_take(&sem_turn, K_SECONDS(2)) != 0) {
-				continue; /* no grant yet; re-check link_up */
+				/* No grant this round. If we go ~10 s with no turn at all, our CS-turn
+				 * subscription was most likely clobbered on the reflector when our stale
+				 * (same-address) connection from before a reset got cleaned up — its
+				 * bt_gatt_is_subscribed() then reads false and we're silently dropped from
+				 * the rotation forever (anchor stuck at "ready", never granted). Force a
+				 * re-subscribe (unsubscribe + re-discover) to rewrite the reflector's CCC. */
+				if (++no_grant >= 5 && link_up) {
+					no_grant = 0;
+					LOG_WRN("No grant in ~10s; re-subscribing to CS-turn service");
+					(void)bt_gatt_unsubscribe(connection, &turn_sub);
+					turn_value_handle = 0;
+					k_sem_reset(&sem_discovered);
+					if (bt_gatt_dm_start(connection, &turn_svc_uuid.uuid,
+							     &turn_dm_cb, NULL) == 0) {
+						(void)k_sem_take(&sem_discovered, K_SECONDS(3));
+					}
+				}
+				continue; /* re-check link_up */
 			}
+			no_grant = 0;
 			if (!link_up) {
 				break;
 			}
