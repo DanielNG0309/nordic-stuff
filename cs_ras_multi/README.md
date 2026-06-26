@@ -37,28 +37,6 @@ Each initiator prints a tool-compatible line (parsed by the `Multilateration/` t
 DIST:<m>,AP:0,SAMPLES:<steps>,RSSI:<dBm>,RSSI_DIST:<m>
 ```
 
-## Why this avoids the "second CS operation" reset / MPSL "leak"
-
-This is the important part for anyone who hit the repeated-CS failure with the stock RAS samples.
-
-- **It never tears CS down.** The failure mode is the *Observer → switch to CS → tear down → back to
-  Observer* cycle, repeated on command. The stock `ras_initiator` / `ras_reflector` samples
-  additionally **`sys_reboot()` on disconnect**, which hides the teardown entirely. This reference
-  instead **keeps the connections up and ranges in a persistent round-robin loop** — there is no
-  per-operation teardown and no reboot in the ranging path (the only `sys_reboot` is a defensive
-  fallback for a should-never-happen null-connection write).
-- **The "MPSL Work" stack growth is not a leak.** The thread analyzer reports a **high-water mark** —
-  the deepest stack use ever seen on a pre-painted stack. It is monotonic by construction: it rises
-  the first time CS runs and then stays, because that is the metric's definition, not because memory
-  is held. "344 → 528 and never returns to baseline" is exactly what a high-water mark does. Watch the
-  *current* free space (or simply that the app keeps running) rather than the peak.
-- **Demonstrated:** a sustained run on one initiator produced **35 distance estimates over 45 s with
-  zero reboots**, both initiators ranging continuously via the round-robin (~0.5–0.8 Hz each, full
-  ~20–25 step counts). No stall, no reset, no degradation across many cycles.
-
-If you need the radio for general Observer scanning *and* occasional CS, prefer keeping the CS link(s)
-up and serializing (as here) over repeatedly creating and destroying CS — the latter is what triggers
-the trouble.
 
 ## Build & flash (NCS v3.3.1, `nrf54l15dk/nrf54l15/cpuapp`)
 
