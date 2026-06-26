@@ -259,7 +259,7 @@ static int scan_init(void)
 	struct bt_scan_init_param scan_params = {
 		.scan_param = NULL,
 		.conn_param = BT_LE_CONN_PARAM(CONN_INTERVAL_BASE, CONN_INTERVAL_BASE, 0,
-					       BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+					       BT_GAP_MS_TO_CONN_TIMEOUT(8000)),
 		.connect_if_match = 1,
 	};
 
@@ -305,7 +305,7 @@ static int setup_link(struct bt_conn *conn, int slot)
 		.interval_min = interval,
 		.interval_max = interval,
 		.latency = 0,
-		.timeout = BT_GAP_MS_TO_CONN_TIMEOUT(4000),
+		.timeout = BT_GAP_MS_TO_CONN_TIMEOUT(8000),
 	};
 	err = bt_conn_le_param_update(conn, &param);
 	if (err) {
@@ -444,7 +444,12 @@ int main(void)
 
 	/* ROUND-ROBIN PHASE: grant one ready link a turn (write GO), wait for its DONE
 	 * notification (bounded burst), then advance. Only one link ranges at a time, so the
-	 * links never contend for the radio — the fix for the free-running starvation. */
+	 * links never contend for the radio — the fix for the free-running starvation.
+	 *
+	 * AUTO-RECONNECT is folded into the same loop: an empty slot (dropped/reset anchor) is
+	 * scanned + re-established instead of being granted a turn. Collision-free because no CS
+	 * turn is active during the reconnect (single-threaded), and bounded so the live anchors
+	 * still get their turns between reconnect attempts. */
 	LOG_INF("Round-robin turn scheduler started (%d link(s)).", established);
 	int slot = 0;
 
@@ -465,8 +470,33 @@ int main(void)
 			} else if (k_sem_take(&sem_turn_done, K_MSEC(2000)) != 0) {
 				LOG_WRN("[slot %d] turn DONE timeout.", slot);
 			}
+		} else if (c == NULL) {
+			/* Dropped slot — reconnect + re-establish it. */
+			err = bt_scan_start(BT_SCAN_TYPE_SCAN_PASSIVE);
+			if (!err || err == -EALREADY) {
+				if (k_sem_take(&sem_connected, K_MSEC(1500)) == 0) {
+					struct bt_conn *nc = last_connected;
+					int ns = -1;
+
+					for (int i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+						if (conns[i] == nc) {
+							ns = i;
+							break;
+						}
+					}
+					(void)bt_scan_stop();
+					if (ns >= 0) {
+						LOG_INF("[slot %d] reconnected; re-establishing.", ns);
+						if (setup_link(nc, ns) == 0) {
+							(void)subscribe_turn(nc, ns);
+						}
+					}
+				} else {
+					(void)bt_scan_stop();
+				}
+			}
 		} else {
-			k_sleep(K_MSEC(50));
+			k_sleep(K_MSEC(50)); /* connected but not yet ready */
 		}
 
 		slot = (slot + 1) % CONFIG_BT_MAX_CONN;

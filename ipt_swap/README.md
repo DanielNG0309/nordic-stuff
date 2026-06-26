@@ -39,18 +39,27 @@ small **CS-Turn GATT service** carries the coordination:
   **notifies `1` ("DONE")**.
 - The central advances to the next link. Only one link ranges at a time → no radio contention.
 
+**Auto-reconnect** is folded into the same round-robin loop: an empty slot (a dropped/reset
+anchor) is scanned and re-established instead of being granted a turn — collision-free because no
+CS turn is active during the reconnect (single-threaded). A reset anchor self-heals back into the
+ranging set in ~5 s, and the live anchors keep ranging meanwhile. Supervision timeout is 8 s.
+
 ## Measured (nRF54L15 DK)
 
 | Config | Rate |
 | --- | --- |
 | Single link, continuous | ~66 Hz |
-| 2 anchors, round-robin | ~1.75 Hz/anchor, balanced, 0 drops |
-| 3 anchors, round-robin | ~1.7–2.8 Hz/anchor (~7 Hz aggregate), stable |
+| 2 anchors, round-robin | ~2.3 Hz/anchor, balanced, 0 starvation |
+| 3 anchors, round-robin | ~2.3 Hz/anchor (~6.8 Hz aggregate), **0 starvation across all trials** |
 
-Per-anchor rate is roughly constant whether 2 or 3 anchors (the per-turn CS re-enable + GATT
-handshake overhead dominates). This is ~10× a RAS or peripheral-reflector-IPT round-robin at 3
-anchors. Accuracy carries the inherent `cs_de` IFFT offset (~+0.5–0.8 m at ~2 m), same as the
-stock samples.
+**Reliability:** round-robin's guaranteed turns mean every anchor ranges regardless of RF — 0 of
+10+ cold-start trials starved a link (vs the free-running variant's 30–50 %). Per-anchor rate is
+roughly constant whether 2 or 3 anchors (per-turn overhead dominates, not the anchor count). This
+is ~10× a RAS or peripheral-reflector-IPT round-robin at 3 anchors. The rate does **not** respond
+to connection-interval / channel-map / burst / steps tuning — the per-turn CS re-establishment is
+a fixed cost (a re-enabled CS procedure runs ~6× slower than continuous single-link CS), so
+~2.3–2.7 Hz/anchor is the practical ceiling. Accuracy carries the inherent `cs_de` IFFT offset
+(~+0.5–0.8 m at ~2 m), same as the stock samples.
 
 ## Implementation notes / gotchas
 
