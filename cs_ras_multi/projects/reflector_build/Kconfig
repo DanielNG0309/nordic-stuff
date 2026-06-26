@@ -1,0 +1,54 @@
+mainmenu "Channel sounding Application"
+
+config CS_BUILD_INITIATOR
+  bool "Build the project as an initiator for CS"
+  default n
+  help
+    Correctly assigns libraries to build initiator
+
+config CS_BUILD_REFLECTOR
+  bool "Build the project as a reflector for CS"
+  default n
+  help
+    Correctly assigns libraries to build reflector
+
+config CS_CALC
+  bool "Enable sample solution for calculating the distance during Channel Sounding"
+  default n
+  help
+    Selecting this assigns the sample method to calculate Channel Sounding
+  select FPU
+  select FPU_SHARING
+  select BT_CS_DE
+
+config THREAD_CHECK
+  bool "Enable thread-analyzer and extra stack instrumentation"
+  default n
+  help
+    Activates Zephyr's built-in thread analyzer, which automatically
+    reports stack sizes and thread names during runtime
+  select THREAD_ANALYZER
+  select THREAD_ANALYZER_AUTO
+  select INIT_STACKS
+  select THREAD_NAME
+
+config TAG_PRINT
+  bool "Enable RTT print for tag"
+  default n 
+  help
+     Enables RTT for logging  
+  select USE_SEGGER_RTT 
+  select LOG
+  select LOG_BACKEND_RTT
+  select LOG_PROCESS_THREAD
+  select RTT_CONSOLE
+
+config DK_PRINT 
+  bool "Enable UART print for dk"
+  default n 
+  help
+     Enables UART for logging
+  select SERIAL 
+  select UART_CONSOLE
+
+source "Kconfig.zephyr"

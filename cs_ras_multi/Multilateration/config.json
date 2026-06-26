@@ -1,0 +1,56 @@
+{
+  "mode": "realtime",
+  "use_accelerometer": false,
+  "use_kalman_filter": true,
+  "num_anchors": 3,
+  "use_default_params": false,
+  "update_interval": 50,
+  "movement_speed": 1.0,
+  "noise_std_dev": 0.2,
+  "outlier_prob": 0.2,
+  "outlier_magnitude": 1.0,
+  "kf_q_parameter": 2.0,
+  "ransac_threshold": 0.3,
+  "enable_median_filter": true,
+  "median_filter_window": 15,
+  "data_staleness_threshold": 1.0,
+  "enable_wls": false,
+  "rssi_min": -90.0,
+  "rssi_max": -40.0,
+  "samples_min": 10,
+  "samples_max": 100,
+  "enable_measurement_gating": false,
+  "gating_threshold": 9.21,
+  "enable_asymmetric_r": false,
+  "r_towards_factor": 1.0,
+  "r_away_factor": 3.0,
+  "velocity_threshold": 0.1,
+  "enable_dynamic_r": false,
+  "min_r_variance": 0.0025,
+  "max_r_variance": 2.25,
+  "enable_anchor_health": false,
+  "min_inlier_rate": 0.5,
+  "health_window_size": 50,
+  "show_ransac_estimate": true,
+  "show_kf_estimate": true,
+  "show_coordinates": true,
+  "anchor_coords": {
+    "A0": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "A1": {
+      "x": 2.0,
+      "y": 0.0
+    },
+    "A2": {
+      "x": 1.0,
+      "y": 2.0
+    }
+  },
+  "com_ports": {
+    "A0": "COM80",
+    "A1": "COM82",
+    "A2": "COM4"
+  }
+}
