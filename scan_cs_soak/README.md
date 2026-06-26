@@ -1,13 +1,5 @@
 # scan_cs_soak — continuous-scan + on-demand Channel Sounding soak test
 
-A reference for a common BLE-gateway pattern: a device that lives in **Observer
-mode (always scanning)** and, on demand, performs **Channel Sounding** ranging
-against a peer — then returns to scanning. The question this settles:
-
-> Can such a gateway repeatedly **connect → run CS → disconnect → resume**, forever,
-> without the scanner wedging and without rebooting between CS operations?
-
-**Yes** — and this project shows two correct ways to do it, plus both CS roles.
 
 ## The two architectures
 
@@ -16,11 +8,7 @@ against a peer — then returns to scanning. The question this settles:
 | `gateway/` | **never stops** | Parallel scan + initiate (`CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL`, production since NCS v2.9.0). Connect/CS/disconnect happen *under* the running scanner. |
 | `gateway_modeswitch/` | **stopped, then restarted** | The Observer↔CS *mode switch*: stop scanner → connect → CS → disconnect → **restart scanner**. The restart is the classic failure point for this pattern — done correctly here it recovers every cycle. |
 
-Both avoid the `sys_reboot()` that the stock CS samples fall back to. The key
-insight: a reported *"MPSL Work stack leak"* after the first CS op is **not a leak**
-— it's a stack **high-water mark** (`CONFIG_INIT_STACKS` paints the stack with
-`0xaa`; "usage" = bytes no longer `0xaa`), which is monotonic by construction and
-never returns to baseline. The thread analyzer here shows it flat across all cycles.
+Both avoid the `sys_reboot()` that the stock CS samples fall back to. 
 
 ## Topology (3 DKs, nRF54L15 DK)
 
