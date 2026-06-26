@@ -82,7 +82,6 @@ per-window scan rate, and the thread analyzer.
   ~220 reports/s. Mode-switch: it restarts cleanly every cycle (`scan_restarts` ==
   cycles, never a `RESTART FAILED`), at a lower ~90/s because it is blind during each
   CS op — the visible cost of stopping the scanner.
-- **MPSL Work stack is flat** (`488/1024`) across all cycles — the "leak" is a watermark.
 - Occasional single-cycle `CS FAILED` self-recovers; the loop never stalls.
 
 **Takeaway:** keep scanning and do CS underneath it (continuous) for uninterrupted
