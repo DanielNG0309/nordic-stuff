@@ -227,6 +227,13 @@ static void distance_estimates_update(void)
 
 	float distance_ifft = cs_de_ifft(iq.scratch_mem);
 
+	/* Subtract the configured offset to compensate the inherent cs_de near-field bias
+	 * (CONFIG_APP_CS_DISTANCE_OFFSET_MM defaults to 0 = no correction). */
+	distance_ifft -= (float)CONFIG_APP_CS_DISTANCE_OFFSET_MM / 1000.0f;
+	if (distance_ifft < 0.0f) {
+		distance_ifft = 0.0f;
+	}
+
 	if (isfinite(distance_ifft)) {
 		static int64_t prev_ts = -1;
 

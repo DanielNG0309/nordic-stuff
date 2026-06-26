@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+config APP_CS_DISTANCE_OFFSET_MM
+	int "CS IFFT distance offset to subtract (millimetres)"
+	default 0
+	help
+	  Subtracted from each IFFT distance estimate (before the median filter) to
+	  compensate the inherent cs_de near-field bias (~+0.5-0.8 m at short range).
+	  Determine the value empirically by measuring at one or more known distances,
+	  then set it here. 0 disables the correction (raw estimator output).
+
+source "Kconfig.zephyr"

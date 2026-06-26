@@ -106,9 +106,15 @@ To keep the sample minimal, it has the following limitations:
 * Multi-antenna configurations are not supported.
   The sample is configured for a single antenna path (``CONFIG_BT_CS_DE_MAX_NUM_ANTENNA_PATHS=1``).
 * Distance estimation only uses the IFFT-based estimator (:c:func:`cs_de_ifft`).
-* Only basic post-processing is applied to the distance estimates in the form of a sliding-window median filter.
-* Tones are not filtered out based on the Tone Quality Indicator (TQI).
-  All reported tones are fed into the distance estimator.
+* Post-processing applied to the distance estimates is a sliding-window median filter.
+* Tones **are** filtered by the Tone Quality Indicator (TQI): only ``BT_HCI_LE_CS_TONE_QUALITY_HIGH``
+  tones are fed into the IFFT estimator, and a procedure is dropped unless at least
+  ``TONE_QI_OK_TONE_COUNT_THRESHOLD`` (15) HIGH tones are present (matching the stock
+  ``ras_initiator``). At close, clean line-of-sight every tone is HIGH, so the filter is a no-op
+  there; it only removes tones at longer range / multipath. (The stock ``ipt_initiator`` does *not*
+  do this — it feeds all tones in.)
+* A fixed distance offset (``CONFIG_APP_CS_DISTANCE_OFFSET_MM``) can be subtracted from each
+  estimate to compensate the inherent ``cs_de`` near-field bias.
 
 User interface
 **************
