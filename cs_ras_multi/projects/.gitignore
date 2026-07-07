@@ -1,0 +1,8 @@
+build*
+build_tag*
+.vscode
+.west
+*.hex
+*.bin
+*.elf
+*.map

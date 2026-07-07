@@ -1,0 +1,9 @@
+/* Enable the FLPR core and reserve its UART. */
+&cpuflpr_vpr {
+	status = "okay";
+};
+
+&uart120 {
+	status = "reserved";
+	interrupt-parent = <&cpuflpr_clic>;
+};

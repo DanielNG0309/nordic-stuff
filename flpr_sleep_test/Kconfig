@@ -1,0 +1,22 @@
+config TEST_SLEEP_DURATION_MS
+	int "Core sleep duration (milliseconds)"
+	default 100
+	help
+	  Set the sleep duration for both APP and FLPR cores.  Based on the
+	  'min-residency-us' values in the board DTS, the PM subsystem will
+	  select the deepest achievable power state for the requested duration.
+
+config APP_PROVIDE_PM_HOOKS
+	bool "Application provides PM hooks"
+	default y
+	select HAS_PM
+	select HAS_POWEROFF
+
+config TEST_BASELINE_SLEEP
+	bool "Sleep-forever baseline measurement mode"
+	default n
+	help
+	  When enabled both cores sleep forever with no compute workload and no
+	  GRTC wakeup.  Use this to measure the true system current floor.
+
+source "Kconfig.zephyr"
