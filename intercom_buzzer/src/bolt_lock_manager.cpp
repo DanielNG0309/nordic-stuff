@@ -21,9 +21,6 @@ void BoltLockManager::Init(StateChangeCallback callback)
 	k_timer_user_data_set(&mActuatorTimer, this);
 
 	AccessMgr::Instance().Init();
-
-	/* Set the default state */
-	Nrf::GetBoard().GetLED(Nrf::DeviceLeds::LED2).Set(IsLocked());
 }
 
 bool BoltLockManager::GetUser(uint16_t userIndex, EmberAfPluginDoorLockUserInfo &user)
@@ -106,6 +103,7 @@ void BoltLockManager::SetRequirePIN(bool require)
 {
 	return AccessMgr::Instance().SetRequirePIN(require);
 }
+
 bool BoltLockManager::GetRequirePIN()
 {
 	return AccessMgr::Instance().GetRequirePIN();
@@ -133,12 +131,6 @@ void BoltLockManager::Unlock(const OperationSource source, const Nullable<chip::
 
 void BoltLockManager::ActuatorTimerEventHandler(k_timer *timer)
 {
-	/*
-	 * The timer event handler is called in the context of the system clock ISR.
-	 * Post an event to the application task queue to process the event in the
-	 * context of the application thread.
-	 */
-
 	BoltLockManagerEvent event;
 	event.manager = static_cast<BoltLockManager *>(k_timer_user_data_get(timer));
 	Nrf::PostTask([event] { ActuatorAppEventHandler(event); });

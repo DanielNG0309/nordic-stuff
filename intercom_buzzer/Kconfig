@@ -68,47 +68,13 @@ config LOCK_PRINT_STORAGE_STATUS
 	  Debug feature to print the debug-level log that contains information of the entry being stored
 	  to persistent storage and how many bytes are left to store the new entry. It can be used to verify
 	  whether credential, schedule or user entries are written properly to persistent storage.
-	  This option should be disabled in production firmware
-	  version.
+	  This option should be disabled in production firmware version.
 
-# This should be deterined based on the maximum possible command length that depends on the LOCK_MAX_CREDENTIAL_LENGTH
+# This should be determined based on the maximum possible command length that depends on the LOCK_MAX_CREDENTIAL_LENGTH
 config SHELL_CMD_BUFF_SIZE
 	default 300
 
 endif
-
-config STATE_LEDS
-	bool "Use LEDs to indicate the device state"
-	default y
-	help
-	  Use LEDs to render the current state of the device such as the progress of commissioning of
-	  the device into a network or the factory reset initiation. Note that setting this option to
-	  'n' does not disable the LED indicating the state of the simulated bolt.
-
-config THREAD_WIFI_SWITCHING
-	bool "Switching between Thread and Wi-Fi"
-	depends on SOC_SERIES_NRF53X
-	depends on NET_L2_OPENTHREAD
-	depends on CHIP_WIFI
-	depends on !CHIP_FACTORY_RESET_ERASE_SETTINGS
-	select EXPERIMENTAL
-	help
-	  Build the application with both Thread and Wi-Fi support and initialize
-	  either transport based on the current configuration. A user can switch
-	  between Thread and Wi-Fi by pressing and holding Button 3 for more than
-	  10 seconds. During the switching, the device is automatically factory
-	  reset and rebooted.
-
-if THREAD_WIFI_SWITCHING
-
-config THREAD_WIFI_SWITCHING_SHELL
-	bool "Shell command for switching between Thread and Wi-Fi"
-	default y if SHELL
-	help
-	  Add "switch_transport" shell command that initiates switching between
-	  Thread and Wi-Fi transport for Matter protocol stack.
-
-endif # THREAD_WIFI_SWITCHING
 
 # Sample configuration used for Thread networking
 if OPENTHREAD
@@ -131,13 +97,6 @@ config OPENTHREAD_DEFAULT_TX_POWER
 
 endif # OPENTHREAD
 
-if CHIP_WIFI
-
-config NRF_WIFI_LOW_POWER
-	default y
-
-endif # CHIP_WIFI
-
 config NCS_SAMPLE_MATTER_PERSISTENT_STORAGE
 	default y
 
@@ -145,17 +104,14 @@ config NCS_SAMPLE_MATTER_PERSISTENT_STORAGE
 if !PSA_SSF_CRYPTO_CLIENT
 
 config NCS_SAMPLE_MATTER_SECURE_STORAGE_BACKEND
-	default y if !CHIP_WIFI
+	default y
 
 config NCS_SAMPLE_MATTER_SETTINGS_STORAGE_BACKEND
-	default n if !CHIP_WIFI
+	default n
 
 endif
 
 # Increase the storage capacity if the schedules are enabled with secure storage
-# This also implies increasing of the OT and Matter stacks because some operations
-# performed during commissioning seem to allocate stack buffers based on the
-# maximum possible secure asset size.
 if LOCK_SCHEDULES && NCS_SAMPLE_MATTER_SECURE_STORAGE_BACKEND
 
 config NCS_SAMPLE_MATTER_SECURE_STORAGE_MAX_ENTRY_NUMBER

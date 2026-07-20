@@ -1,0 +1,23 @@
+softdevice_reserved:
+  address: 0x00
+  size: 0x27000
+  device: flash_ctrl
+  region: flash_primary
+
+factory_data:
+  address: 0xe5000
+  size: 0x1000
+  device: flash_ctrl
+  region: flash_primary
+
+settings_storage:
+  address: 0xe6000
+  size: 0xe000
+  device: flash_ctrl
+  region: flash_primary
+
+uf2_partition:
+  address: 0xf4000
+  size: 0xc000
+  device: flash_ctrl
+  region: flash_primary
