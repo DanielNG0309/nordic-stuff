@@ -25,3 +25,6 @@
 /* Do not automatically register Thread Network Commissioning instance. */
 #define _NO_NETWORK_COMMISSIONING_DRIVER_
 #endif
+#ifndef CONFIG_UPDATEABLE_IMAGE_NUMBER
+#define CONFIG_UPDATEABLE_IMAGE_NUMBER 1
+#endif
