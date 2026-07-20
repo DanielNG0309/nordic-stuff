@@ -6,9 +6,14 @@
 
 #pragma once
 
-#include <platform/CHIPDeviceLayer.h>
+#include "bolt_lock_manager.h"
 
+struct k_timer;
 struct Identify;
+
+#ifdef CONFIG_NCS_SAMPLE_MATTER_TEST_EVENT_TRIGGERS
+#include "event_triggers/event_triggers.h"
+#endif
 
 class AppTask {
 public:
@@ -20,12 +25,24 @@ public:
 
 	CHIP_ERROR StartApp();
 
+	void UpdateClusterState(const BoltLockManager::StateData &stateData);
 	static void IdentifyStartHandler(Identify *);
 	static void IdentifyStopHandler(Identify *);
 
-	/* Drive the relay from the Matter On/Off attribute-change callback. */
-	static void SetRelayState(bool on);
-
 private:
 	CHIP_ERROR Init();
+
+	static void LockStateChanged(const BoltLockManager::StateData &stateData);
+	static void UpdateClusterStateHandler(const BoltLockManager::StateData &stateData);
+
+#ifdef CONFIG_CHIP_NUS
+	static void NUSLockCallback(void *context);
+	static void NUSUnlockCallback(void *context);
+#endif
+
+#ifdef CONFIG_NCS_SAMPLE_MATTER_TEST_EVENT_TRIGGERS
+	constexpr static Nrf::Matter::TestEventTrigger::EventTriggerId kDoorLockJammedEventTriggerId =
+		0xFFFF'FFFF'3277'4000;
+	static CHIP_ERROR DoorLockJammedEventCallback(Nrf::Matter::TestEventTrigger::TriggerValue);
+#endif
 };
