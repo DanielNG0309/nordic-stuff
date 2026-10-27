@@ -102,43 +102,57 @@ charge/regulator path.
 
 ---
 
-## Identity clash with the deadbolt lock (2026-10-26)
+## Identity clash with the deadbolt lock (resolved 2026-10-27)
 
-The motorised deadbolt (`C:\myfw\application\deadbolt\lock_matter`, same Door Lock sample
-base) was first flashed with **exactly this buzzer's identity**: VID `0xFFF1`, PID `0x8006`,
-serial number `11223344556677889900` (Nordic's default `CONFIG_CHIP_DEVICE_SERIAL_NUMBER`),
-discriminator 3840, passcode 20202021, so the same QR code `MT:8IXS142C00KA0648G00`.
-Commissioning the deadbolt in Google Home made **the buzzer disappear from Home**: Home took
-it for the same device paired again.
+The motorised deadbolt (private repo `matter-deadbolt`, `lock_matter/`, same Door Lock sample
+base) first used **exactly this buzzer's identity**: VID `0xFFF1`, PID `0x8006`, the stock
+test DAC for 0x8006, Nordic's default serial `11223344556677889900`, discriminator 3840, so
+the same QR code `MT:8IXS142C00KA0648G00`. Adding either device in Google Home removed the
+other.
 
-Fix: the deadbolt now has its own serial number (`DEADBOLT0001`). Give the buzzer its own
-too, then re-add it (USB needed for both the flash and the reset):
+What was tried, and what happened:
 
-1. In `prj.conf` set `CONFIG_CHIP_DEVICE_SERIAL_NUMBER="BUZZER0001"` (any unique string;
-   the serial isn't part of the test DAC attestation, so Google's test acceptance is
-   unaffected). Keep VID `0xFFF1` / PID `0x8006`: the test certificates and any Google
-   console entry are tied to those. Optionally also change the discriminator
-   (`CONFIG_CHIP_DEVICE_DISCRIMINATOR`, e.g. 0xF01) so the two devices never advertise the
-   same one; that changes the QR code (the build prints the new one in
-   `build/*/zephyr/factory_data.txt`).
-2. Rebuild pristine and flash with the UF2 pipeline below. Factory data (0xe5000) is inside
-   the trimmed range, so the new serial goes on; settings (the old fabric) are not erased.
-   If the PC blocks writes to the UF2 drive (group policy `RemovableStorageDevices\Deny_All`,
-   "Access is denied"), flash through the bootloader's serial port instead (no keys, app
-   region only; a failed transfer leaves the board in the bootloader):
-   `pip install adafruit-nrfutil`, then
+| Change | Result |
+|---|---|
+| Own serial numbers (`BUZZER0001`, `DEADBOLT0001`) | Still merged: adding one still removed the other |
+| Buzzer with a self-made DAC (test PAI-signed, verifies to the test PAA) | Rejected: "Failed generating device credentials" |
+| Buzzer on PID 0x8005 (stock DAC), not registered in the console | Rejected the same way |
+| Buzzer on 0x8005 right after registering it | Rejected (probably too soon after registering) |
+| **Buzzer on 0x8006, deadbolt on 0x8005 (registered, stock DAC)** | **Both paired and stay** |
+
+Final identities: buzzer **0xFFF1/0x8006** (this firmware, serial `BUZZER0001`, QR
+`MT:8IXS142C00KA0648G00`); deadbolt **0xFFF1/0x8005** (serial `DEADBOLT0001`, discriminator
+0xF01, QR `MT:6FCJ1CEK01KA0648G00`). The manual code `3497-011-2332` is the same for both, so
+scan QR codes.
+
+Rules learned:
+
+- Google Home keeps one device per test VID/PID + stock DAC; a different serial is not
+  enough. Give each device its own PID (with the SDK's stock DAC for it; Nordic ships
+  0x8000-0x801F, all covered by the test CD).
+- Self-made test DACs are refused by Google even though they chain to the test PAA.
+- Once the Google account has a Developer Console project with test-VID integrations
+  (project "Xiao test" here), Google only issues credentials for registered VID/PIDs:
+  "Failed generating device credentials", right after the device answers the CSR. Register
+  each PID (type Lock): 0x8005 and 0x8006 are registered. Nordic's ecosystem-testing
+  tutorial on DevZone has the same requirement.
+
+Re-adding the buzzer (USB needed):
+
+1. Rebuild pristine and flash. Factory data (0xe5000) is inside the trimmed range; settings
+   (the old fabric) are not erased. This PC blocks writes to the UF2 drive (group policy
+   `RemovableStorageDevices\Deny_All`, "Access is denied"), so flash through the bootloader's
+   serial port instead (no keys, app region only; a failed transfer leaves the board in the
+   bootloader): triple-press reset, `pip install adafruit-nrfutil`, then
    `adafruit-nrfutil dfu genpkg --dev-type 0x0052 --sd-req 0xFFFE --application trimmed.hex buzzer_dfu.zip`
    and `adafruit-nrfutil dfu serial --package buzzer_dfu.zip -p COMxx -b 115200 --singlebank`
-   (COMxx = the bootloader's port, USB VID 0x2886, while the UF2 drive is up).
-3. Make sure the deadbolt is **not** in pairing mode (it only opens pairing for 1 h after a
-   short press of its button).
-4. Factory-reset the buzzer so it drops the old fabric: on its USB serial console (shell),
-   run `matter device factoryreset` (shell on the second CDC port, COM90 here). It reboots, and with `CONFIG_CHIP_ENABLE_PAIRING_AUTOSTART=y`
-   it opens the commissioning window by itself.
-5. In Google Home: + -> Device -> Matter-enabled device, scan the QR code (unchanged
-   `MT:8IXS142C00KA0648G00` / manual `3497-011-2332` if only the serial changed).
-
-Every Matter device in the same Home needs its own serial number, even on test VIDs.
+   (COMxx = the bootloader's port, USB VID 0x2886).
+2. Factory-reset it on the shell (second CDC port of the app, VID 0x2FE3, COM90 here):
+   `matter device factoryreset`. It reboots and, with `CONFIG_CHIP_ENABLE_PAIRING_AUTOSTART=y`,
+   opens the commissioning window for **15 minutes** (`CHIP_BLE_ADVERTISING_DURATION=15`).
+   After that, `matter ble adv start` only restarts BLE advertising, not the commissioning
+   window: the phone connects but the buzzer ignores it. Factory-reset again instead.
+3. In Google Home: + -> Device -> Matter-enabled device, scan the QR code.
 
 ---
 
