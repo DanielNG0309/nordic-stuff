@@ -44,7 +44,8 @@ charge/regulator path.
 - Sample base: `samples/matter/lock`
 - Factory data: `CONFIG_CHIP_FACTORY_DATA=y`, `CONFIG_CHIP_FACTORY_DATA_BUILD=y`,
   `SB_CONFIG_MATTER_FACTORY_DATA_GENERATE=y`
-- Partition: factory data at `0xf7000`, UF2 bootloader at `0xf4000+`
+- Partition: factory data at `0xe5000` (4 KB, `pm_static_xiao_ble_nrf52840.yml`), settings
+  `0xe6000`-`0xf3fff`, UF2 bootloader at `0xf4000+`
 - Confirmed onboarding codes (unchanged throughout):
   ```
   QRCode:            MT:8IXS142C00KA0648G00
@@ -98,6 +99,46 @@ charge/regulator path.
   generally broken/slow (blank device list, slow loading) independent of the
   Matter-specific issue — this needs to settle before further commissioning
   attempts are meaningful.
+
+---
+
+## Identity clash with the deadbolt lock (2026-10-26)
+
+The motorised deadbolt (`C:\myfw\application\deadbolt\lock_matter`, same Door Lock sample
+base) was first flashed with **exactly this buzzer's identity**: VID `0xFFF1`, PID `0x8006`,
+serial number `11223344556677889900` (Nordic's default `CONFIG_CHIP_DEVICE_SERIAL_NUMBER`),
+discriminator 3840, passcode 20202021, so the same QR code `MT:8IXS142C00KA0648G00`.
+Commissioning the deadbolt in Google Home made **the buzzer disappear from Home**: Home took
+it for the same device paired again.
+
+Fix: the deadbolt now has its own serial number (`DEADBOLT0001`). Give the buzzer its own
+too, then re-add it (USB needed for both the flash and the reset):
+
+1. In `prj.conf` set `CONFIG_CHIP_DEVICE_SERIAL_NUMBER="BUZZER0001"` (any unique string;
+   the serial isn't part of the test DAC attestation, so Google's test acceptance is
+   unaffected). Keep VID `0xFFF1` / PID `0x8006`: the test certificates and any Google
+   console entry are tied to those. Optionally also change the discriminator
+   (`CONFIG_CHIP_DEVICE_DISCRIMINATOR`, e.g. 0xF01) so the two devices never advertise the
+   same one; that changes the QR code (the build prints the new one in
+   `build/*/zephyr/factory_data.txt`).
+2. Rebuild pristine and flash with the UF2 pipeline below. Factory data (0xe5000) is inside
+   the trimmed range, so the new serial goes on; settings (the old fabric) are not erased.
+   If the PC blocks writes to the UF2 drive (group policy `RemovableStorageDevices\Deny_All`,
+   "Access is denied"), flash through the bootloader's serial port instead (no keys, app
+   region only; a failed transfer leaves the board in the bootloader):
+   `pip install adafruit-nrfutil`, then
+   `adafruit-nrfutil dfu genpkg --dev-type 0x0052 --sd-req 0xFFFE --application trimmed.hex buzzer_dfu.zip`
+   and `adafruit-nrfutil dfu serial --package buzzer_dfu.zip -p COMxx -b 115200 --singlebank`
+   (COMxx = the bootloader's port, USB VID 0x2886, while the UF2 drive is up).
+3. Make sure the deadbolt is **not** in pairing mode (it only opens pairing for 1 h after a
+   short press of its button).
+4. Factory-reset the buzzer so it drops the old fabric: on its USB serial console (shell),
+   run `matter device factoryreset` (shell on the second CDC port, COM90 here). It reboots, and with `CONFIG_CHIP_ENABLE_PAIRING_AUTOSTART=y`
+   it opens the commissioning window by itself.
+5. In Google Home: + -> Device -> Matter-enabled device, scan the QR code (unchanged
+   `MT:8IXS142C00KA0648G00` / manual `3497-011-2332` if only the serial changed).
+
+Every Matter device in the same Home needs its own serial number, even on test VIDs.
 
 ---
 
