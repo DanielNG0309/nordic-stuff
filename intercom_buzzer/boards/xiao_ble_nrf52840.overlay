@@ -1,0 +1,23 @@
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+
+    buttons {
+        compatible = "gpio-keys";
+    };
+
+    relay_out: relay-output {
+        compatible = "gpio-leds";
+        relay_gpio: relay_gpio {
+            gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
