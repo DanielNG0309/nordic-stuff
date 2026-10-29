@@ -1,6 +1,6 @@
 # Smart Apartment Buzzer — Project State
 
-_Last updated: 2026-05-01_
+_Last updated: 2026-10-29_
 
 ## Goal
 
@@ -173,6 +173,30 @@ Re-adding the buzzer (USB needed):
    `chip-tool` or nRF Connect for Desktop's Matter controller first (which
    skips Google's slow attestation round-trip), then let Google Home pick the
    device up over the Thread network afterward.
+
+---
+
+## Power (checked 2026-10-29 against the deadbolt's PPK2 session)
+
+The deadbolt (XIAO nRF54LM20A, same Door Lock sample) idled at 59 µA and dropped to 37 µA
+after two fixes: its unused on-board NOR sat in standby (12 µA) and its always-on SMP
+advertising at 1 s cost 10 µA. Its console UART cost nothing measurable. Checked here from the
+code; **the buzzer's board floor has never been measured** (the PPK2 note above is the D2 line
+only).
+
+| Item | Buzzer | Status |
+|---|---|---|
+| External flash | XIAO nRF52840 has a P25Q16H on QSPI. NCS's `matter_init.cpp` suspends it (deep power-down) at startup when `CONFIG_PM_DEVICE` and the QSPI driver are on; `prj.conf` has `CONFIG_PM_DEVICE=y` and the board conf `CONFIG_FLASH=y`. | Probably fine. Confirm `CONFIG_NORDIC_QSPI_NOR=y` in the build's `.config`. |
+| Always-on BLE advertising | None: no SMP (`CONFIG_CHIP_BOOTLOADER_NONE`), and Matter's commissioning advertising stops after 15 min. | Fine. |
+| Console / shells | `prj.conf` runs the shells on USB CDC ACM, which only work with USB connected. | Probably negligible on battery; `prj_release.conf` turns them off anyway. |
+| Unused RAM | Powered down only in `prj_release.conf` (`CONFIG_RAM_POWER_DOWN_LIBRARY`). | A few µA at most with `prj.conf`. |
+| Thread | SED, 1 s slow poll (~17 µA on Nordic's nRF54LM20 figures at 3 V). ICD active mode 1000 ms (sample: 300 ms). | SSED (Thread CSL) would save ~2 µA at the same 1 s; not tried. |
+| Relay coil | SRD-03VDC: 0.36 W nominal, ~120 mA at 3 V, for the 2 s pulse: ~0.24 C (67 µAh) per buzz. The deadbolt's similar relay measured 110 mA from the battery. | At 5 buzzes/day ≈ 120 mAh/yr, likely more than the idle floor. A 1 s pulse halves it, if the intercom accepts it. |
+
+To measure: PPK2 in **source meter** mode on the BAT+/BAT- pads at 3.9 V, battery and USB
+unplugged, 3 min idle. Not in the battery's ground lead: the PPK2's ampere meter needs
+0.8–5 V on VIN, so in the ground return it starves the load. With the 620 mAh cell, every
+10 µA of floor is ~88 mAh/yr.
 
 ---
 
