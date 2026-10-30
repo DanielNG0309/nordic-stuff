@@ -41,6 +41,7 @@ endif()
 
 target_sources(app PRIVATE
     src/app_task.cpp
+    src/battery.cpp
     src/bolt_lock_manager.cpp
     src/main.cpp
     src/zcl_callbacks.cpp

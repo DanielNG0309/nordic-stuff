@@ -181,17 +181,44 @@ Re-adding the buzzer (USB needed):
 The deadbolt (XIAO nRF54LM20A, same Door Lock sample) idled at 59 µA and dropped to 37 µA
 after two fixes: its unused on-board NOR sat in standby (12 µA) and its always-on SMP
 advertising at 1 s cost 10 µA. Its console UART cost nothing measurable. Checked here from the
-code; **the buzzer's board floor has never been measured** (the PPK2 note above is the D2 line
-only).
+code (`west build --cmake-only`, NCS v3.1.0); **the buzzer's board floor has never been
+measured** (the PPK2 note above is the D2 line only).
+
+**Found: `uart0` kept its receiver on (fixed in 3.1.1.1).** A 620 mAh charge lasted about a
+month, i.e. ~0.8 mA on average where a 1 s SED should draw ~20–40 µA. The XIAO board enables
+`uart0` (D6/D7) although nothing uses it here (console and shell are on USB CDC). The shell and
+CDC ACM turn on interrupt-driven UART mode for every UART, and with `CONFIG_PM_DEVICE` but no
+runtime PM, `pm_device_driver_init()` resumes the UART at boot, which starts its receiver
+(`uart_nrfx_uarte.c`, legacy shim). Nothing suspends it again, so the HF clock never stops:
+typically 0.5–1 mA on the nRF52840. `boards/xiao_ble_nrf52840.overlay` now disables `uart0`.
+Confirm with the next charge (expect months, not weeks).
 
 | Item | Buzzer | Status |
 |---|---|---|
-| External flash | XIAO nRF52840 has a P25Q16H on QSPI. NCS's `matter_init.cpp` suspends it (deep power-down) at startup when `CONFIG_PM_DEVICE` and the QSPI driver are on; `prj.conf` has `CONFIG_PM_DEVICE=y` and the board conf `CONFIG_FLASH=y`. | Probably fine. Confirm `CONFIG_NORDIC_QSPI_NOR=y` in the build's `.config`. |
+| `uart0` receiver | See above. | **Fixed** (3.1.1.1): disabled in the overlay. |
+| Thread device type | `CONFIG_OPENTHREAD_MTD_SED=y`, Nordic MTD library. | Fine. |
+| External flash | XIAO nRF52840 has a P25Q16H on QSPI. NCS's `matter_init.cpp` suspends it (deep power-down) at startup when `CONFIG_PM_DEVICE` and the QSPI driver are on; the build has `CONFIG_NORDIC_QSPI_NOR=y`. | Fine. |
 | Always-on BLE advertising | None: no SMP (`CONFIG_CHIP_BOOTLOADER_NONE`), and Matter's commissioning advertising stops after 15 min. | Fine. |
-| Console / shells | `prj.conf` runs the shells on USB CDC ACM, which only work with USB connected. | Probably negligible on battery; `prj_release.conf` turns them off anyway. |
+| Console / shells | `prj.conf` runs the shells on USB CDC ACM, which only work with USB connected. | Fine on battery, except that they made `uart0` interrupt-driven (above). |
 | Unused RAM | Powered down only in `prj_release.conf` (`CONFIG_RAM_POWER_DOWN_LIBRARY`). | A few µA at most with `prj.conf`. |
 | Thread | SED, 1 s slow poll (~17 µA on Nordic's nRF54LM20 figures at 3 V). ICD active mode 1000 ms (sample: 300 ms). | SSED (Thread CSL) would save ~2 µA at the same 1 s; not tried. |
 | Relay coil | SRD-03VDC: 0.36 W nominal, ~120 mA at 3 V, for the 2 s pulse: ~0.24 C (67 µAh) per buzz. The deadbolt's similar relay measured 110 mA from the battery. | At 5 buzzes/day ≈ 120 mAh/yr, likely more than the idle floor. A 1 s pulse halves it, if the intercom accepts it. |
+| Battery divider | The XIAO's VBAT divider (1M/510k) is grounded through P0.14, held low for good (3.1.1.1, below): ~2.7 µA at 4.2 V. | Accepted: switching it off would leave VBAT on P0.31 through the 1M. |
+
+### Battery level (3.1.1.1)
+
+The lock endpoint has a Power Source cluster (battery, rechargeable), so Google Home shows the
+buzzer's battery. `src/battery.cpp` reads VBAT on P0.31 (AIN7) through the on-board divider
+every 10 min, and 12 s after each buzz (once the relay's sag is over), maps the voltage to a
+percentage with a generic LiPo curve (not a profile of this cell, so treat it as a gauge, not
+a fuel meter), and reports `BatPercentRemaining`, `BatVoltage`, `BatChargeLevel` (warning
+below 20 %, critical below 10 %) and `BatChargeState` (from the charger's CHG output on
+P0.17). Only changes of 2 % or 50 mV are reported, since every report wakes the radio. While
+charging, the voltage reads high, and so does the percentage.
+
+The cluster went in by editing `src/default_zap/lock.zap` and regenerating with NCS v3.1.0's
+`west zap-generate` (on a copy with absolute `zcl.json`/`app-templates.json` paths, into an
+empty output directory, then `clang-format` with NCS's style at 120 columns).
 
 To measure: PPK2 in **source meter** mode on the BAT+/BAT- pads at 3.9 V, battery and USB
 unplugged, 3 min idle. Not in the battery's ground lead: the PPK2's ampere meter needs
