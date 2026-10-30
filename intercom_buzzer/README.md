@@ -158,21 +158,15 @@ Re-adding the buzzer (USB needed):
 
 ## Immediate Next Steps
 
-1. Clear cache (not data) for **Google Home** and **Google Play Services**,
-   restart phone, confirm the app loads normally and existing commercial
-   Matter devices display correctly with no lag.
-2. Once app is stable, test the **nRF54L15 light bulb sample** first as a
-   clean baseline (no dev-console interference expected now that `0xFFF1` is
-   no longer registered).
-3. If that commissions successfully, retry the XIAO board #2 with its
-   existing firmware (still VID `0xFFF1` / PID `0x8006`, DAC unchanged).
-4. If Google's DAC verification is still slow, just retry — it has worked
-   before with identical firmware/certs. This appears to be intermittent
-   server-side latency rather than something fixable locally.
-5. Long-term: for reliable dev-loop commissioning, consider commissioning via
-   `chip-tool` or nRF Connect for Desktop's Matter controller first (which
-   skips Google's slow attestation round-trip), then let Google Home pick the
-   device up over the Thread network afterward.
+_Commissioning is solved (Google Home, 2026-10-27); the old steps for it are in the history._
+
+1. **Confirm the drain fix** over the next charge on 3.1.1.1 (expect months, not weeks), and
+   watch the battery level in Google Home on battery (on USB it reads high).
+2. **Buzz + door, before the final build** (decided 2026-10-29; design in `matter-deadbolt`
+   `docs/PLAN.md`, Phase 4b): a second endpoint, "Buzz + door", that pulses the relay and
+   sends a signed Thread UDP message to the deadbolt, which unlocks too. Flash is 98 % used,
+   so it may need room made (test shell, logs).
+3. **PPK2 floor** in the deadbolt's second PPK2 session ("Power", below).
 
 ---
 
