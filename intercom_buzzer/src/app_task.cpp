@@ -5,6 +5,7 @@
  */
 
 #include "app_task.h"
+#include "battery.h"
 #include "bolt_lock_manager.h"
 
 #include "app/matter_init.h"
@@ -103,6 +104,7 @@ void AppTask::LockStateChanged(const BoltLockManager::StateData &stateData)
 		LOG_INF("Unlock action completed");
 		gpio_pin_set_dt(&sRelayGpio, 1);
 		LOG_INF("Relay on");
+		Battery::NoteLoad();
 		k_work_schedule(&sRelayOffWork, K_SECONDS(2));
 #ifdef CONFIG_CHIP_NUS
 		Nrf::GetNUSService().SendData("unlocked", sizeof("unlocked"));
@@ -245,6 +247,8 @@ CHIP_ERROR AppTask::Init()
 
 	/* Initialize lock manager */
 	BoltLockMgr().Init(LockStateChanged);
+
+	Battery::Init();
 
 #ifdef CONFIG_NCS_SAMPLE_MATTER_TEST_EVENT_TRIGGERS
 	ReturnErrorOnFailure(Nrf::Matter::TestEventTrigger::Instance().RegisterTestEventTrigger(

@@ -1,3 +1,6 @@
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
+
 / {
     chosen {
         zephyr,console = &cdc_acm_uart0;
@@ -19,5 +22,40 @@
 &zephyr_udc0 {
     cdc_acm_uart0: cdc_acm_uart0 {
         compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
+/* Unused (console and shell are on USB CDC), but the board enables it: with the shell's
+ * interrupt-driven UART mode its driver starts the receiver at boot and nothing stops it,
+ * keeping the HF clock on (~0.5-1 mA; a 620 mAh charge lasted about a month).
+ */
+&uart0 {
+    status = "disabled";
+};
+/* Battery voltage: VBAT -> 1M -> P0.31 (AIN7) -> 510k -> P0.14. P0.14 is held low for good (the
+ * divider then draws ~2.7 uA): high or floating, it would put VBAT on P0.31 through the 1M.
+ * P0.17 is the charger's CHG output, low while charging.
+ */
+/ {
+    zephyr,user {
+        io-channels = <&adc 7>;
+        vbat-enable-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+        charging-gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+    };
+};
+
+&adc {
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+    channel@7 {
+        reg = <7>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        /* The divider's 340k source impedance needs the 40 us acquisition time */
+        zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+        zephyr,input-positive = <NRF_SAADC_AIN7>;
+        zephyr,resolution = <12>;
+        zephyr,oversampling = <4>;
     };
 };
