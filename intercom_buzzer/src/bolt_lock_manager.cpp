@@ -113,17 +113,19 @@ void BoltLockManager::Lock(const OperationSource source, const Nullable<chip::Fa
 			   const Nullable<chip::NodeId> &nodeId, const Nullable<ValidatePINResult> &validatePINResult)
 {
 	VerifyOrReturn(mStateData.mState != State::kLockingCompleted);
-	StateData newStateData{ State::kLockingInitiated, source, fabricIdx, nodeId, validatePINResult };
+	StateData newStateData{ State::kLockingInitiated, source, fabricIdx, nodeId, validatePINResult,
+				mStateData.mEndpoint };
 	SetStateData(newStateData);
 
 	k_timer_start(&mActuatorTimer, K_MSEC(kActuatorMovementTimeMs), K_NO_WAIT);
 }
 
-void BoltLockManager::Unlock(const OperationSource source, const Nullable<chip::FabricIndex> &fabricIdx,
-			     const Nullable<chip::NodeId> &nodeId, const Nullable<ValidatePINResult> &validatePINResult)
+void BoltLockManager::Unlock(chip::EndpointId endpoint, const OperationSource source,
+			     const Nullable<chip::FabricIndex> &fabricIdx, const Nullable<chip::NodeId> &nodeId,
+			     const Nullable<ValidatePINResult> &validatePINResult)
 {
 	VerifyOrReturn(mStateData.mState != State::kUnlockingCompleted);
-	StateData newStateData{ State::kUnlockingInitiated, source, fabricIdx, nodeId, validatePINResult };
+	StateData newStateData{ State::kUnlockingInitiated, source, fabricIdx, nodeId, validatePINResult, endpoint };
 	SetStateData(newStateData);
 
 	k_timer_start(&mActuatorTimer, K_MSEC(kActuatorMovementTimeMs), K_NO_WAIT);
