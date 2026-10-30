@@ -6,3 +6,6 @@
 /build*/
 
 build.log
+
+# shared key
+door_link_key.conf

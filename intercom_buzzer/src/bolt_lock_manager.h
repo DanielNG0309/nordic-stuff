@@ -23,6 +23,12 @@ class BoltLockManager {
 public:
 	static constexpr size_t kMaxCredentialLength = 128;
 
+	/* Two door locks on one relay: the plain buzz, and "Buzz + door", which also unlocks the
+	 * apartment deadbolt.
+	 */
+	static constexpr chip::EndpointId kBuzzEndpointId = 1;
+	static constexpr chip::EndpointId kBuzzDoorEndpointId = 2;
+
 	enum class State : uint8_t {
 		kLockingInitiated = 0,
 		kLockingCompleted,
@@ -48,6 +54,7 @@ public:
 		Nullable<chip::FabricIndex> mFabricIdx;
 		Nullable<chip::NodeId> mNodeId;
 		Nullable<ValidatePINResult> mValidatePINResult;
+		chip::EndpointId mEndpoint = kBuzzEndpointId;
 	};
 
 	using StateChangeCallback = void (*)(const StateData &);
@@ -58,6 +65,11 @@ public:
 
 	const StateData &GetState() const { return mStateData; }
 	bool IsLocked() const { return mStateData.mState == State::kLockingCompleted; }
+	/* One relay: a buzz cycle on one endpoint keeps the other out until it has relocked. */
+	bool IsBusyOnOtherEndpoint(chip::EndpointId endpoint) const
+	{
+		return !IsLocked() && mStateData.mEndpoint != endpoint;
+	}
 
 	bool GetUser(uint16_t userIndex, EmberAfPluginDoorLockUserInfo &user);
 	bool SetUser(uint16_t userIndex, chip::FabricIndex creator, chip::FabricIndex modifier,
@@ -92,7 +104,8 @@ public:
 	void Lock(const OperationSource source, const Nullable<chip::FabricIndex> &fabricIdx = NullNullable,
 		  const Nullable<chip::NodeId> &nodeId = NullNullable,
 		  const Nullable<ValidatePINResult> &validatePINResult = NullNullable);
-	void Unlock(const OperationSource source, const Nullable<chip::FabricIndex> &fabricIdx = NullNullable,
+	void Unlock(chip::EndpointId endpoint, const OperationSource source,
+		    const Nullable<chip::FabricIndex> &fabricIdx = NullNullable,
 		    const Nullable<chip::NodeId> &nodeId = NullNullable,
 		    const Nullable<ValidatePINResult> &validatePINResult = NullNullable);
 

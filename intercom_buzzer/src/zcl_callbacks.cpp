@@ -66,8 +66,10 @@ bool emberAfPluginDoorLockOnDoorLockCommand(EndpointId endpointId, const Nullabl
 	Nullable<BoltLockManager::ValidatePINResult> validatePINResult;
 	bool success = BoltLockMgr().ValidatePIN(pinCode, err, validatePINResult);
 
-	/* Handle changing attribute state on command reception */
-	if (success) {
+	/* Handle changing attribute state on command reception. While the other endpoint is
+	 * buzzing, this one is already locked: leave that cycle alone.
+	 */
+	if (success && !BoltLockMgr().IsBusyOnOtherEndpoint(endpointId)) {
 		BoltLockMgr().Lock(BoltLockManager::OperationSource::kRemote, fabricIdx, nodeId, validatePINResult);
 	}
 
@@ -78,12 +80,16 @@ bool emberAfPluginDoorLockOnDoorUnlockCommand(EndpointId endpointId, const Nulla
 					      const Nullable<chip::NodeId> &nodeId, const Optional<ByteSpan> &pinCode,
 					      OperationErrorEnum &err)
 {
+	/* The relay is taken: fail the command rather than report a buzz that didn't happen. */
+	VerifyOrReturnValue(!BoltLockMgr().IsBusyOnOtherEndpoint(endpointId), false);
+
 	Nullable<BoltLockManager::ValidatePINResult> validatePINResult;
 	bool success = BoltLockMgr().ValidatePIN(pinCode, err, validatePINResult);
 
 	/* Handle changing attribute state on command reception */
 	if (success) {
-		BoltLockMgr().Unlock(BoltLockManager::OperationSource::kRemote, fabricIdx, nodeId, validatePINResult);
+		BoltLockMgr().Unlock(endpointId, BoltLockManager::OperationSource::kRemote, fabricIdx, nodeId,
+				     validatePINResult);
 	}
 
 	return success;
@@ -126,6 +132,7 @@ void emberAfDoorLockClusterInitCallback(EndpointId endpoint)
 
 	BoltLockManager::StateData state = BoltLockMgr().GetState();
 	state.mSource = BoltLockManager::OperationSource::kUnspecified;
+	state.mEndpoint = endpoint;
 	AppTask::Instance().UpdateClusterState(state);
 }
 

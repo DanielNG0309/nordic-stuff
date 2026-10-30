@@ -6,6 +6,15 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+# Key shared with the deadbolt, kept out of git: door_link_key.conf holds one line,
+# CONFIG_DOOR_LINK_KEY="<64 hex digits>" (README.md, "Buzz + door").
+set(DOOR_LINK_KEY_CONF ${CMAKE_CURRENT_LIST_DIR}/door_link_key.conf)
+if(NOT EXISTS ${DOOR_LINK_KEY_CONF})
+  message(FATAL_ERROR "Missing ${DOOR_LINK_KEY_CONF}: create it with "
+    "CONFIG_DOOR_LINK_KEY=\"<64 hex digits>\", the same key as the deadbolt")
+endif()
+list(APPEND EXTRA_CONF_FILE ${DOOR_LINK_KEY_CONF})
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(lock)
 
@@ -43,6 +52,7 @@ target_sources(app PRIVATE
     src/app_task.cpp
     src/battery.cpp
     src/bolt_lock_manager.cpp
+    src/door_link.cpp
     src/main.cpp
     src/zcl_callbacks.cpp
     ${access_srcs}

@@ -2,7 +2,8 @@
 
 Matter-over-Thread door lock on a Seeed XIAO nRF52840 that pulses a relay for 2 s to short an
 apartment intercom's door-release button, so the street door can be opened from Google Home.
-It shows up as a door lock: "unlock" buzzes the door, then it goes back to locked.
+It shows up as a door lock: "unlock" buzzes the door, then it goes back to locked. A second
+lock, "Buzz + door", does the same and also unlocks the apartment deadbolt.
 
 Based on the NCS v3.1.0 `samples/matter/lock` sample, without MCUboot: the XIAO keeps its
 UF2 bootloader and boots straight into the app.
@@ -61,6 +62,36 @@ percentage read high.
 
 P0.14, the bottom of the divider, is held low all the time (~2.7 µA at 4.2 V): high or
 floating, it would put VBAT on P0.31 through the 1M.
+
+### Buzz + door
+
+A second Door Lock endpoint (endpoint 2, its own tile in Google Home) for coming home: it buzzes
+like the plain one and also unlocks the apartment deadbolt (`matter-deadbolt`). Google Home
+routines can't unlock a lock, so the two devices talk directly over the Thread network they
+share, with no hub in the path.
+
+- Unlocking endpoint 2 sends a 24-byte UDP message (port 49513): `BZD1`, a 32-bit counter and a
+  truncated HMAC-SHA256 (`src/door_link.cpp`). The deadbolt checks the signature and only takes a
+  counter higher than the last one, then unlocks through its normal path, so Home shows the
+  event and its auto-relock applies.
+- It goes to the Realm-Local All Thread Nodes multicast address, the one a parent queues for its
+  sleepy children (plain `ff03::1` doesn't reach them). There's no address to look up, and the
+  deadbolt gets it at its next 1 s poll. Nothing confirms delivery, so it's sent twice, 1 s apart.
+- The relay is shared: while one endpoint runs its buzz cycle (about 6 s), an unlock on the other
+  one fails rather than doing nothing.
+- The counter is in settings (`doorlink/tx`) and survives a factory reset, which only clears
+  Matter's own keys. If the settings are ever erased, set `CONFIG_DOOR_LINK_COUNTER_MIN` above the
+  last counter sent, or the deadbolt will refuse the messages.
+
+The key is shared with the deadbolt and stays out of git. Both builds need the same
+`door_link_key.conf`, one line:
+
+```
+CONFIG_DOOR_LINK_KEY="<64 hex digits>"
+```
+
+A new key: `python -c "import secrets; print(secrets.token_hex(32))"`, then rebuild and update
+both devices.
 
 After a change to `src/default_zap/lock.zap`, regenerate `zap-generated/` and `lock.matter`
 with `west zap-generate`.

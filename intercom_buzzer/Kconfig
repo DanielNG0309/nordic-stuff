@@ -6,6 +6,18 @@
 
 mainmenu "Matter Lock sample application"
 
+config DOOR_LINK_KEY
+	string "Key shared with the deadbolt, 64 hex digits"
+	help
+	  Signs the "Buzz + door" message. Set in door_link_key.conf, which stays out of git.
+
+config DOOR_LINK_COUNTER_MIN
+	int "Lowest message counter"
+	default 0
+	help
+	  The deadbolt refuses a counter it has already seen. If the buzzer's settings are ever
+	  erased, set this above the last counter sent.
+
 config LOCK_MAX_NUM_USERS
 	int "Maximum number of users supported by the lock"
 	default 10

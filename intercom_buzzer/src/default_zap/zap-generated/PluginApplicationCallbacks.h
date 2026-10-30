@@ -38,22 +38,22 @@ void MatterGroupKeyManagementPluginServerInitCallback();
 void MatterIcdManagementPluginServerInitCallback();
 void MatterDoorLockPluginServerInitCallback();
 
-#define MATTER_PLUGINS_INIT                                                                                            \
-	MatterIdentifyPluginServerInitCallback();                                                                      \
-	MatterDescriptorPluginServerInitCallback();                                                                    \
-	MatterAccessControlPluginServerInitCallback();                                                                 \
-	MatterBasicInformationPluginServerInitCallback();                                                              \
-	MatterOtaSoftwareUpdateRequestorPluginServerInitCallback();                                                    \
-	MatterPowerSourcePluginServerInitCallback();                                                                   \
-	MatterGeneralCommissioningPluginServerInitCallback();                                                          \
-	MatterNetworkCommissioningPluginServerInitCallback();                                                          \
-	MatterDiagnosticLogsPluginServerInitCallback();                                                                \
-	MatterGeneralDiagnosticsPluginServerInitCallback();                                                            \
-	MatterSoftwareDiagnosticsPluginServerInitCallback();                                                           \
-	MatterThreadNetworkDiagnosticsPluginServerInitCallback();                                                      \
-	MatterWiFiNetworkDiagnosticsPluginServerInitCallback();                                                        \
-	MatterAdministratorCommissioningPluginServerInitCallback();                                                    \
-	MatterOperationalCredentialsPluginServerInitCallback();                                                        \
-	MatterGroupKeyManagementPluginServerInitCallback();                                                            \
-	MatterIcdManagementPluginServerInitCallback();                                                                 \
-	MatterDoorLockPluginServerInitCallback();
+#define MATTER_PLUGINS_INIT                                                    \
+  MatterIdentifyPluginServerInitCallback();                                    \
+  MatterDescriptorPluginServerInitCallback();                                  \
+  MatterAccessControlPluginServerInitCallback();                               \
+  MatterBasicInformationPluginServerInitCallback();                            \
+  MatterOtaSoftwareUpdateRequestorPluginServerInitCallback();                  \
+  MatterPowerSourcePluginServerInitCallback();                                 \
+  MatterGeneralCommissioningPluginServerInitCallback();                        \
+  MatterNetworkCommissioningPluginServerInitCallback();                        \
+  MatterDiagnosticLogsPluginServerInitCallback();                              \
+  MatterGeneralDiagnosticsPluginServerInitCallback();                          \
+  MatterSoftwareDiagnosticsPluginServerInitCallback();                         \
+  MatterThreadNetworkDiagnosticsPluginServerInitCallback();                    \
+  MatterWiFiNetworkDiagnosticsPluginServerInitCallback();                      \
+  MatterAdministratorCommissioningPluginServerInitCallback();                  \
+  MatterOperationalCredentialsPluginServerInitCallback();                      \
+  MatterGroupKeyManagementPluginServerInitCallback();                          \
+  MatterIcdManagementPluginServerInitCallback();                               \
+  MatterDoorLockPluginServerInitCallback();

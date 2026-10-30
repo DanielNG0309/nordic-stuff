@@ -7,6 +7,7 @@
 #include "app_task.h"
 #include "battery.h"
 #include "bolt_lock_manager.h"
+#include "door_link.h"
 
 #include "app/matter_init.h"
 #include "app/task_executor.h"
@@ -43,7 +44,7 @@ using namespace ::chip::DeviceLayer;
 
 namespace
 {
-constexpr EndpointId kLockEndpointId = 1;
+constexpr EndpointId kLockEndpointId = BoltLockManager::kBuzzEndpointId;
 
 #ifdef CONFIG_CHIP_NUS
 constexpr uint16_t kAdvertisingIntervalMin = 400;
@@ -68,6 +69,8 @@ void AppFactoryResetHandler(const ChipDeviceEvent *event, intptr_t /* unused */)
 
 Identify sIdentify = { kLockEndpointId, AppTask::IdentifyStartHandler, AppTask::IdentifyStopHandler,
 		       Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator };
+Identify sIdentifyBuzzDoor = { BoltLockManager::kBuzzDoorEndpointId, AppTask::IdentifyStartHandler,
+			       AppTask::IdentifyStopHandler, Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator };
 
 void AppTask::IdentifyStartHandler(Identify *)
 {
@@ -96,6 +99,9 @@ void AppTask::LockStateChanged(const BoltLockManager::StateData &stateData)
 		break;
 	case BoltLockManager::State::kUnlockingInitiated:
 		LOG_INF("Unlock action initiated");
+		if (stateData.mEndpoint == BoltLockManager::kBuzzDoorEndpointId) {
+			DoorLink::SendUnlock();
+		}
 #ifdef CONFIG_CHIP_NUS
 		Nrf::GetNUSService().SendData("unlocking", sizeof("unlocking"));
 #endif
@@ -155,10 +161,10 @@ void AppTask::UpdateClusterStateHandler(const BoltLockManager::StateData &stateD
 	}
 
 	Nullable<DlLockState> currentLockState;
-	LockState::Get(kLockEndpointId, currentLockState);
+	LockState::Get(stateData.mEndpoint, currentLockState);
 
 	if (currentLockState.IsNull()) {
-		LockState::Set(kLockEndpointId, newLockState);
+		LockState::Set(stateData.mEndpoint, newLockState);
 	} else {
 		LOG_INF("Updating LockState attribute");
 
@@ -177,8 +183,9 @@ void AppTask::UpdateClusterStateHandler(const BoltLockManager::StateData &stateD
 #endif
 		}
 
-		if (!DoorLockServer::Instance().SetLockState(kLockEndpointId, newLockState, stateData.mSource, userId,
-							     credentials, stateData.mFabricIdx, stateData.mNodeId)) {
+		if (!DoorLockServer::Instance().SetLockState(stateData.mEndpoint, newLockState, stateData.mSource,
+							     userId, credentials, stateData.mFabricIdx,
+							     stateData.mNodeId)) {
 			LOG_ERR("Failed to update LockState attribute");
 		}
 	}
@@ -256,7 +263,12 @@ CHIP_ERROR AppTask::Init()
 		Nrf::Matter::TestEventTrigger::EventTrigger{ 0, DoorLockJammedEventCallback }));
 #endif
 
-	return Nrf::Matter::StartServer();
+	ReturnErrorOnFailure(Nrf::Matter::StartServer());
+
+	/* The Thread stack only exists from here on. */
+	DoorLink::Init();
+
+	return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR AppTask::StartApp()
