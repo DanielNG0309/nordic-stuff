@@ -595,8 +595,8 @@
          ZAP_ATTRIBUTE_MASK(EXTERNAL_STORAGE)}, /* EndpointList */             \
         {ZAP_SIMPLE_DEFAULT(0x06), 0x0000FFFC, 4, ZAP_TYPE(BITMAP32),          \
          0}, /* FeatureMap */                                                  \
-        {ZAP_EMPTY_DEFAULT(), 0x0000FFFD, 2, ZAP_TYPE(INT16U),                 \
-         ZAP_ATTRIBUTE_MASK(EXTERNAL_STORAGE)}, /* ClusterRevision */          \
+        {ZAP_SIMPLE_DEFAULT(3), 0x0000FFFD, 2, ZAP_TYPE(INT16U),               \
+         0}, /* ClusterRevision */                                             \
                                                                                \
         /* Endpoint: 1, Cluster: Door Lock (server) */                         \
         {ZAP_SIMPLE_DEFAULT(0), 0x00000000, 1, ZAP_TYPE(ENUM8),                \
@@ -1128,7 +1128,7 @@
       .clusterId = 0x0000002F, \
       .attributes = ZAP_ATTRIBUTE_INDEX(183), \
       .attributeCount = 13, \
-      .clusterSize = 77, \
+      .clusterSize = 79, \
       .mask = ZAP_CLUSTER_MASK(SERVER), \
       .functions = NULL, \
       .acceptedCommandList = nullptr, \
@@ -1197,7 +1197,7 @@
 // This is an array of EmberAfEndpointType structures.
 #define GENERATED_ENDPOINT_TYPES                                               \
   {                                                                            \
-    {ZAP_CLUSTER_INDEX(0), 16, 92}, {ZAP_CLUSTER_INDEX(16), 4, 120},           \
+    {ZAP_CLUSTER_INDEX(0), 16, 92}, {ZAP_CLUSTER_INDEX(16), 4, 122},           \
         {ZAP_CLUSTER_INDEX(20), 3, 43},                                        \
   }
 
@@ -1211,7 +1211,7 @@ static_assert(ATTRIBUTE_LARGEST <= CHIP_CONFIG_MAX_ATTRIBUTE_STORE_ELEMENT_SIZE,
 #define ATTRIBUTE_SINGLETONS_SIZE (35)
 
 // Total size of attribute storage
-#define ATTRIBUTE_MAX_SIZE (255)
+#define ATTRIBUTE_MAX_SIZE (257)
 
 // Number of fixed endpoints
 #define FIXED_ENDPOINT_COUNT (3)
