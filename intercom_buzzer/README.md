@@ -117,6 +117,12 @@ battery and USB unplugged. Not in the battery's ground lead: the PPK2's ampere m
 west build -p -b xiao_ble/nrf52840
 ```
 
+For the build that stays on the door, add `release.conf` (hardware watchdog, reboot on a crash):
+
+```
+west build -p -b xiao_ble/nrf52840 -- -Dintercom_buzzer_EXTRA_CONF_FILE=<full path to release.conf>
+```
+
 The XIAO keeps its UF2 bootloader, so flash the app region only:
 
 1. Trim `build/merged.hex` to 0x27000-0xf3fff (leaves the MBR and the bootloader alone; the
